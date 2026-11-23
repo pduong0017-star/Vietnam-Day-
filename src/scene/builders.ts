@@ -1143,40 +1143,53 @@ export function buildBronzeDrumProp(
   standBase.castShadow = true;
   group.add(standBase);
 
-  // Hourglass Đông Sơn bronze drum profile via LatheGeometry
+  // Authentic Đông Sơn bronze drum profile (Chân trống loe → Thân trống thon → Tang trống phình tròn)
   const drumPts = [
-    new THREE.Vector2(0.46, 0.0),
-    new THREE.Vector2(0.42, 0.14),
-    new THREE.Vector2(0.32, 0.36),
-    new THREE.Vector2(0.36, 0.56),
-    new THREE.Vector2(0.56, 0.74),
-    new THREE.Vector2(0.58, 0.86),
-    new THREE.Vector2(0.54, 0.9),
+    new THREE.Vector2(0.5, 0.0),
+    new THREE.Vector2(0.45, 0.12),
+    new THREE.Vector2(0.36, 0.28),
+    new THREE.Vector2(0.35, 0.5),
+    new THREE.Vector2(0.42, 0.62),
+    new THREE.Vector2(0.58, 0.74),
+    new THREE.Vector2(0.61, 0.84),
+    new THREE.Vector2(0.58, 0.9),
   ];
   const drumBody = new THREE.Mesh(
-    trackGeo(new THREE.LatheGeometry(drumPts, 24), geos),
+    trackGeo(new THREE.LatheGeometry(drumPts, 28), geos),
     bronzeBodyMat,
   );
   drumBody.position.y = 0.2;
   drumBody.castShadow = true;
   group.add(drumBody);
 
-  // Engraved bronze tympanum face on top
+  // Raised bronze horizontal relief ribs (gờ chỉ nổi quanh tang & thân trống)
+  const ribGeo = trackGeo(new THREE.TorusGeometry(0.41, 0.018, 8, 24), geos);
+  for (const ry of [0.54, 0.76]) {
+    const rib = new THREE.Mesh(ribGeo, goldMat);
+    rib.rotation.x = Math.PI / 2;
+    rib.position.y = ry;
+    group.add(rib);
+  }
+
+  // Engraved Ngọc Lũ bronze tympanum face on top
   const tympanum = new THREE.Mesh(
-    trackGeo(new THREE.CylinderGeometry(0.56, 0.56, 0.04, 24), geos),
+    trackGeo(new THREE.CylinderGeometry(0.59, 0.59, 0.04, 28), geos),
     drumTopMat,
   );
   tympanum.position.y = 1.1;
   group.add(tympanum);
 
-  // Four bronze ceremonial handles around waist
-  const handleGeo = trackGeo(new THREE.TorusGeometry(0.08, 0.022, 8, 12), geos);
+  // Four pairs of braided bronze ceremonial handles (quai kép trống đồng)
+  const handleGeo = trackGeo(new THREE.TorusGeometry(0.085, 0.02, 8, 12), geos);
   for (let i = 0; i < 4; i++) {
     const a = (i * Math.PI) / 2;
-    const h = new THREE.Mesh(handleGeo, goldMat);
-    h.position.set(Math.cos(a) * 0.44, 0.84, Math.sin(a) * 0.44);
-    h.rotation.y = -a + Math.PI / 2;
-    group.add(h);
+    for (const offset of [-0.055, 0.055]) {
+      const ha = a + offset * 2.2;
+      const h = new THREE.Mesh(handleGeo, goldMat);
+      h.position.set(Math.cos(ha) * 0.48, 0.86, Math.sin(ha) * 0.48);
+      h.rotation.y = -ha + Math.PI / 2;
+      group.add(h);
+    }
   }
 
   return group;
@@ -1224,9 +1237,18 @@ export function buildFestivalFlagPole(
     new THREE.MeshStandardMaterial({
       color: 0xffffff,
       map: textures.festivalFlagMap,
-      roughness: 0.65,
+      alphaTest: 0.42,
+      roughness: 0.64,
       metalness: 0.04,
       side: THREE.DoubleSide,
+    }),
+    mats,
+  );
+  const crimsonTasselMat = trackMat(
+    new THREE.MeshStandardMaterial({
+      color: 0xc41e1b,
+      roughness: 0.65,
+      metalness: 0.04,
     }),
     mats,
   );
@@ -1239,12 +1261,12 @@ export function buildFestivalFlagPole(
   socket.position.y = 0.16;
   group.add(socket);
 
-  // Slightly angled festive bamboo-lacquer staff
+  // Slightly angled festive lacquered staff
   const staffHolder = new THREE.Group();
-  staffHolder.rotation.z = -0.14;
+  staffHolder.rotation.z = -0.15;
   group.add(staffHolder);
 
-  const staffH = 4.65;
+  const staffH = 4.7;
   const staff = new THREE.Mesh(
     trackGeo(new THREE.CylinderGeometry(0.042, 0.062, staffH, 10), geos),
     poleMat,
@@ -1253,24 +1275,39 @@ export function buildFestivalFlagPole(
   staff.castShadow = true;
   staffHolder.add(staff);
 
-  // Golden spearhead finial & crimson tassel
+  // Golden spearhead finial + ceremonial crimson silk tassel tied at neck
   const spear = new THREE.Mesh(
-    trackGeo(new THREE.ConeGeometry(0.085, 0.38, 8), geos),
+    trackGeo(new THREE.ConeGeometry(0.085, 0.4, 8), geos),
     goldMat,
   );
-  spear.position.y = staffH + 0.3;
+  spear.position.y = staffH + 0.32;
   staffHolder.add(spear);
 
-  // Square five-color festival flag (Cờ vuông lễ hội)
-  const flagW = 1.48;
-  const flagH = 1.42;
-  const flagGeo = trackGeo(new THREE.PlaneGeometry(flagW, flagH, 14, 10), geos);
-  flagGeo.translate(flagW / 2 + 0.04, 0, 0);
+  const tasselRing = new THREE.Mesh(
+    trackGeo(new THREE.TorusGeometry(0.07, 0.024, 8, 12), geos),
+    goldMat,
+  );
+  tasselRing.rotation.x = Math.PI / 2;
+  tasselRing.position.y = staffH + 0.1;
+  staffHolder.add(tasselRing);
+
+  const neckTassel = new THREE.Mesh(
+    trackGeo(new THREE.ConeGeometry(0.095, 0.42, 10), geos),
+    crimsonTasselMat,
+  );
+  neckTassel.position.y = staffH - 0.1;
+  staffHolder.add(neckTassel);
+
+  // Authentic flaming-fringe five-color festival flag (Cờ Hội Ngũ Sắc có diềm lửa răng cưa)
+  const flagW = 1.72;
+  const flagH = 1.66;
+  const flagGeo = trackGeo(new THREE.PlaneGeometry(flagW, flagH, 16, 12), geos);
+  flagGeo.translate(flagW / 2 + 0.03, 0, 0);
   const restPositions = new Float32Array(
     (flagGeo.attributes.position as THREE.BufferAttribute).array,
   );
   const flagMesh = new THREE.Mesh(flagGeo, flagMat);
-  flagMesh.position.set(0, staffH - flagH / 2 - 0.05, 0);
+  flagMesh.position.set(0, staffH - flagH / 2 - 0.14, 0);
   flagMesh.castShadow = true;
   staffHolder.add(flagMesh);
 
@@ -2193,7 +2230,9 @@ export function buildShorelineRockAndReeds(
 }
 
 /**
- * Stylized Golden Đông Sơn Chim Lạc (Mythic Vietnamese Crane) for soaring sky choreography.
+ * Authentic Sculpted Vietnamese Chim Hạc / Chim Lạc (Mythic Crane) for soaring sky choreography:
+ * Graceful S-curved crane neck, pointed beak, flowing Đông Sơn crest plume, feathered wings,
+ * forked streaming tail feathers, and slender trailing legs.
  */
 export function buildLacBird(
   geos: THREE.BufferGeometry[],
@@ -2201,53 +2240,349 @@ export function buildLacBird(
 ): { group: THREE.Group; leftWing: THREE.Mesh; rightWing: THREE.Mesh } {
   const group = new THREE.Group();
 
-  const goldBirdMat = trackMat(
+  const ivoryGoldMat = trackMat(
     new THREE.MeshStandardMaterial({
-      color: 0xf4cf6b,
-      emissive: 0xc28622,
-      emissiveIntensity: 0.45,
-      roughness: 0.3,
-      metalness: 0.82,
+      color: 0xfff3d4,
+      emissive: 0xd9a13b,
+      emissiveIntensity: 0.36,
+      roughness: 0.34,
+      metalness: 0.45,
       side: THREE.DoubleSide,
     }),
     mats,
   );
 
-  // Slender aerodynamic body + long crest & beak
-  const body = new THREE.Mesh(
-    trackGeo(new THREE.ConeGeometry(0.11, 1.05, 8), geos),
-    goldBirdMat,
+  const goldAccentMat = trackMat(
+    new THREE.MeshStandardMaterial({
+      color: 0xf2c65a,
+      emissive: 0xc2821c,
+      emissiveIntensity: 0.42,
+      roughness: 0.28,
+      metalness: 0.8,
+      side: THREE.DoubleSide,
+    }),
+    mats,
   );
-  body.rotation.x = Math.PI / 2;
-  group.add(body);
+
+  const crownCrimsonMat = trackMat(
+    new THREE.MeshStandardMaterial({
+      color: 0xd62b24,
+      emissive: 0x8a1410,
+      emissiveIntensity: 0.3,
+      roughness: 0.5,
+    }),
+    mats,
+  );
+
+  // 1. Sculpted streamlined crane torso (LatheGeometry rotated along +Z flight axis)
+  const torsoPts = [
+    new THREE.Vector2(0.0, -0.45),
+    new THREE.Vector2(0.08, -0.26),
+    new THREE.Vector2(0.145, -0.02),
+    new THREE.Vector2(0.135, 0.2),
+    new THREE.Vector2(0.07, 0.38),
+    new THREE.Vector2(0.0, 0.44),
+  ];
+  const torsoGeo = trackGeo(new THREE.LatheGeometry(torsoPts, 14), geos);
+  torsoGeo.rotateX(Math.PI / 2);
+  const torso = new THREE.Mesh(torsoGeo, ivoryGoldMat);
+  group.add(torso);
+
+  // 2. Graceful S-curved extended crane neck (cổ hạc vươn dài uốn mềm)
+  const neckCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0.02, 0.34),
+    new THREE.Vector3(0, 0.08, 0.58),
+    new THREE.Vector3(0, 0.19, 0.8),
+    new THREE.Vector3(0, 0.22, 0.96),
+  ]);
+  const neck = new THREE.Mesh(
+    trackGeo(new THREE.TubeGeometry(neckCurve, 12, 0.044, 8, false), geos),
+    ivoryGoldMat,
+  );
+  group.add(neck);
+
+  // Crane head + crimson crown spot (đỉnh đầu hạc đỏ) + slender long pointed beak
+  const head = new THREE.Mesh(
+    trackGeo(new THREE.SphereGeometry(0.072, 12, 10), geos),
+    ivoryGoldMat,
+  );
+  head.scale.set(0.85, 0.9, 1.15);
+  head.position.set(0, 0.22, 0.99);
+  group.add(head);
+
+  const redCrown = new THREE.Mesh(
+    trackGeo(new THREE.SphereGeometry(0.042, 8, 8), geos),
+    crownCrimsonMat,
+  );
+  redCrown.position.set(0, 0.27, 0.98);
+  group.add(redCrown);
 
   const beak = new THREE.Mesh(
-    trackGeo(new THREE.ConeGeometry(0.035, 0.48, 6), geos),
-    goldBirdMat,
+    trackGeo(new THREE.ConeGeometry(0.028, 0.38, 8), geos),
+    goldAccentMat,
   );
   beak.rotation.x = Math.PI / 2;
-  beak.position.z = 0.72;
+  beak.position.set(0, 0.21, 1.24);
   group.add(beak);
 
-  // Swept crescent Đông Sơn wings
+  // Iconic flowing curved Đông Sơn crest plume sweeping back from the head (mào chim Lạc)
+  const crestCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0.26, 0.95),
+    new THREE.Vector3(0, 0.38, 0.72),
+    new THREE.Vector3(0, 0.36, 0.46),
+  ]);
+  const crest = new THREE.Mesh(
+    trackGeo(new THREE.TubeGeometry(crestCurve, 10, 0.018, 6, false), geos),
+    goldAccentMat,
+  );
+  group.add(crest);
+
+  // 3. Long graceful feathered crane wings with scalloped primary tips
   const wingShape = new THREE.Shape();
-  wingShape.moveTo(0, 0);
-  wingShape.bezierCurveTo(0.45, 0.18, 0.95, 0.08, 1.35, -0.28);
-  wingShape.bezierCurveTo(0.82, -0.22, 0.35, -0.26, 0, -0.28);
+  wingShape.moveTo(0, 0.2);
+  wingShape.bezierCurveTo(0.42, 0.36, 0.98, 0.28, 1.56, 0.02);
+  // Scalloped primary feather tips along trailing edge
+  wingShape.lineTo(1.36, -0.1);
+  wingShape.lineTo(1.44, -0.18);
+  wingShape.lineTo(1.14, -0.2);
+  wingShape.lineTo(1.2, -0.28);
+  wingShape.lineTo(0.86, -0.24);
+  wingShape.bezierCurveTo(0.5, -0.28, 0.22, -0.24, 0, -0.2);
   wingShape.closePath();
-  const wingGeo = trackGeo(new THREE.ShapeGeometry(wingShape, 6), geos);
+
+  const wingGeo = trackGeo(
+    new THREE.ExtrudeGeometry(wingShape, { depth: 0.024, bevelEnabled: false }),
+    geos,
+  );
   wingGeo.rotateX(-Math.PI / 2);
 
-  const rightWing = new THREE.Mesh(wingGeo, goldBirdMat);
-  rightWing.position.set(0.05, 0.02, 0.14);
+  const rightWing = new THREE.Mesh(wingGeo, ivoryGoldMat);
+  rightWing.position.set(0.07, 0.04, 0.06);
   group.add(rightWing);
 
-  const leftWing = new THREE.Mesh(wingGeo, goldBirdMat);
+  const leftWing = new THREE.Mesh(wingGeo, ivoryGoldMat);
   leftWing.scale.x = -1;
-  leftWing.position.set(-0.05, 0.02, 0.14);
+  leftWing.position.set(-0.07, 0.04, 0.06);
   group.add(leftWing);
 
+  // 4. Long streaming forked tail plumage (đuôi chim Lạc xòe mềm)
+  const tailShape = new THREE.Shape();
+  tailShape.moveTo(0, 0);
+  tailShape.quadraticCurveTo(0.18, -0.28, 0.26, -0.78);
+  tailShape.lineTo(0.08, -0.52);
+  tailShape.lineTo(0, -0.84);
+  tailShape.lineTo(-0.08, -0.52);
+  tailShape.lineTo(-0.26, -0.78);
+  tailShape.quadraticCurveTo(-0.18, -0.28, 0, 0);
+  const tailGeo = trackGeo(new THREE.ShapeGeometry(tailShape, 6), geos);
+  tailGeo.rotateX(Math.PI / 2);
+  const tail = new THREE.Mesh(tailGeo, goldAccentMat);
+  tail.position.set(0, 0.02, -0.36);
+  group.add(tail);
+
+  // 5. Two slender trailing crane legs extended gracefully behind in flight
+  const legGeo = trackGeo(new THREE.CylinderGeometry(0.012, 0.01, 0.72, 6), geos);
+  legGeo.rotateX(Math.PI / 2);
+  for (const lx of [-0.055, 0.055]) {
+    const leg = new THREE.Mesh(legGeo, goldAccentMat);
+    leg.position.set(lx, -0.04, -0.72);
+    group.add(leg);
+  }
+
   return { group, leftWing, rightWing };
+}
+
+/**
+ * Celestial Sky Cultural Centerpiece (NEW):
+ * Vầng Hào Quang 54 Dân Tộc (54-Ethnic Unity Mandala Halo) + Flowing Vietnamese Ethnic Brocade Silk Ribbons
+ * symbolizing Đại Đoàn Kết 54 Dân Tộc & Ngày Văn Hóa Việt Nam 24-11 high above the heritage skyline.
+ */
+export function buildCelestialUnityTableau(
+  textures: SceneTextureBundle,
+  geos: THREE.BufferGeometry[],
+  mats: THREE.Material[],
+): {
+  group: THREE.Group;
+  haloMesh: THREE.Mesh;
+  haloMat: THREE.MeshBasicMaterial;
+  orbRingGroup: THREE.Group;
+  ribbons: Array<{ mesh: THREE.Mesh; restPositions: Float32Array; side: number }>;
+  ribbonMat: THREE.MeshBasicMaterial;
+} {
+  const group = new THREE.Group();
+  group.name = 'CelestialUnityTableau';
+
+  // 1. Ethereal glowing Đông Sơn & 54-Ethnic Unity Halo Disc
+  const haloGeo = trackGeo(new THREE.PlaneGeometry(11.2, 11.2), geos);
+  const haloMat = trackMat(
+    new THREE.MeshBasicMaterial({
+      map: textures.unityHaloMap,
+      transparent: true,
+      opacity: 0.62,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      fog: false,
+      side: THREE.DoubleSide,
+    }),
+    mats,
+  );
+  const haloMesh = new THREE.Mesh(haloGeo, haloMat);
+  haloMesh.renderOrder = 2;
+  group.add(haloMesh);
+
+  // 2. 3D Ring of 54 Delicate Glowing Unity Jewels (54 Dân Tộc Anh Em) orbiting around the halo
+  const orbRingGroup = new THREE.Group();
+  const orbGeo = trackGeo(new THREE.OctahedronGeometry(0.1, 0), geos);
+  const orbMat = trackMat(
+    new THREE.MeshBasicMaterial({
+      color: 0xffe494,
+      transparent: true,
+      opacity: 0.88,
+      fog: false,
+    }),
+    mats,
+  );
+  const orbInst = new THREE.InstancedMesh(orbGeo, orbMat, 54);
+  orbInst.renderOrder = 3;
+  const orbDummy = new THREE.Object3D();
+  const orbColor = new THREE.Color();
+  const ethnicColors = [0xffe27a, 0xff9b78, 0x8be2b4, 0xfff5d6, 0x9bc4ff, 0xf7b0c8];
+  for (let i = 0; i < 54; i++) {
+    const a = (i / 54) * Math.PI * 2;
+    const r = 4.68;
+    orbDummy.position.set(Math.cos(a) * r, Math.sin(a) * r, 0.08);
+    orbDummy.rotation.set(0, 0, a);
+    orbDummy.scale.setScalar(i % 2 === 0 ? 1.05 : 0.82);
+    orbDummy.updateMatrix();
+    orbInst.setMatrixAt(i, orbDummy.matrix);
+    orbColor.setHex(ethnicColors[i % ethnicColors.length]);
+    orbInst.setColorAt(i, orbColor);
+  }
+  if (orbInst.instanceColor) orbInst.instanceColor.needsUpdate = true;
+  orbRingGroup.add(orbInst);
+  group.add(orbRingGroup);
+
+  // 3. Pair of Sweeping Flowing Vietnamese Ethnic Brocade Silk Ribbons (Dải Lụa Thổ Cẩm 54 Dân Tộc)
+  const ribbonMat = trackMat(
+    new THREE.MeshBasicMaterial({
+      map: textures.brocadeRibbonMap,
+      transparent: true,
+      opacity: 0.78,
+      depthWrite: false,
+      fog: false,
+      side: THREE.DoubleSide,
+    }),
+    mats,
+  );
+
+  const ribbons: Array<{ mesh: THREE.Mesh; restPositions: Float32Array; side: number }> = [];
+  for (const side of [-1, 1]) {
+    const ribbonW = 19.0;
+    const ribbonH = 1.55;
+    const rGeo = trackGeo(new THREE.PlaneGeometry(ribbonW, ribbonH, 36, 4), geos);
+    const pos = rGeo.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < pos.count; i++) {
+      const u = pos.getX(i) / ribbonW + 0.5; // 0..1 from inner halo outward
+      const v = pos.getY(i);
+      const x = side * (3.2 + u * ribbonW * 0.92);
+      // Graceful S-wave arch sweeping smoothly across the open sky
+      const archY = Math.sin(u * Math.PI * 1.35) * 1.9 - u * 0.95;
+      const depthZ = -Math.sin(u * Math.PI) * 2.4 - u * 1.2;
+      pos.setXYZ(i, x, archY + v, depthZ);
+    }
+    pos.needsUpdate = true;
+    const restPositions = new Float32Array(pos.array);
+
+    const rMesh = new THREE.Mesh(rGeo, ribbonMat);
+    rMesh.position.set(0, -0.3, -0.5);
+    rMesh.renderOrder = 2;
+    group.add(rMesh);
+    ribbons.push({ mesh: rMesh, restPositions, side });
+  }
+
+  return { group, haloMesh, haloMat, orbRingGroup, ribbons, ribbonMat };
+}
+
+/**
+ * Traditional Vietnamese Crescent Flute Kite (Diều Sáo Truyền Thống)
+ * with curved giấy dó crescent wing, twin miniature bamboo wind-flutes (ống sáo diều),
+ * and twin fluttering five-color silk tail streamers.
+ */
+export function buildVietnameseFluteKite(
+  textures: SceneTextureBundle,
+  geos: THREE.BufferGeometry[],
+  mats: THREE.Material[],
+): { group: THREE.Group; tails: THREE.Mesh[] } {
+  const group = new THREE.Group();
+
+  const kiteMat = trackMat(
+    new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: textures.kiteMap,
+      alphaTest: 0.35,
+      roughness: 0.65,
+      metalness: 0.04,
+      emissive: 0x6b3a18,
+      emissiveIntensity: 0.25,
+      side: THREE.DoubleSide,
+    }),
+    mats,
+  );
+  const bambooMat = trackMat(
+    new THREE.MeshStandardMaterial({
+      color: 0xc2934b,
+      roughness: 0.68,
+      metalness: 0.06,
+    }),
+    mats,
+  );
+
+  // Gently bowed crescent kite wing
+  const wingGeo = trackGeo(new THREE.PlaneGeometry(2.6, 1.3, 12, 4), geos);
+  const wPos = wingGeo.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i < wPos.count; i++) {
+    const wx = wPos.getX(i);
+    wPos.setZ(i, -Math.pow(wx / 1.3, 2) * 0.28);
+  }
+  wingGeo.computeVertexNormals();
+  const wing = new THREE.Mesh(wingGeo, kiteMat);
+  wing.rotation.x = -0.35;
+  group.add(wing);
+
+  // Twin miniature bamboo wind-flutes (Ống Sáo Diều) strapped onto spine
+  const fluteGeo = trackGeo(new THREE.CylinderGeometry(0.032, 0.036, 0.56, 8), geos);
+  fluteGeo.rotateZ(Math.PI / 2);
+  const flute1 = new THREE.Mesh(fluteGeo, bambooMat);
+  flute1.position.set(0, 0.18, 0.04);
+  group.add(flute1);
+
+  const flute2 = new THREE.Mesh(fluteGeo, bambooMat);
+  flute2.scale.set(0.75, 0.8, 0.8);
+  flute2.position.set(0, 0.26, 0.04);
+  group.add(flute2);
+
+  // Twin fluttering silk ribbon tails (đuôi diều lụa đỏ & vàng)
+  const tails: THREE.Mesh[] = [];
+  const tailColors = [0xd62c24, 0xf2be3c];
+  for (let t = 0; t < 2; t++) {
+    const tailMat = trackMat(
+      new THREE.MeshBasicMaterial({
+        color: tailColors[t],
+        transparent: true,
+        opacity: 0.85,
+        side: THREE.DoubleSide,
+      }),
+      mats,
+    );
+    const tailGeo = trackGeo(new THREE.PlaneGeometry(0.11, 2.4, 2, 12), geos);
+    tailGeo.translate(0, -1.2, 0);
+    const tailMesh = new THREE.Mesh(tailGeo, tailMat);
+    tailMesh.position.set(t === 0 ? -0.22 : 0.22, -0.34, -0.08);
+    group.add(tailMesh);
+    tails.push(tailMesh);
+  }
+
+  return { group, tails };
 }
 
 /**

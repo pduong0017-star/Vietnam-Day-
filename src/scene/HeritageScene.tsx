@@ -13,6 +13,7 @@ import {
   buildBambooGrove,
   buildBlossomTree,
   buildBronzeDrumProp,
+  buildCelestialUnityTableau,
   buildCeremonialLanternPole,
   buildCulturalStele,
   buildFestivalFlagPole,
@@ -25,6 +26,7 @@ import {
   buildOnePillarPagoda,
   buildShorelineRockAndReeds,
   buildTheHucBridge,
+  buildVietnameseFluteKite,
 } from './builders';
 
 interface HeritageSceneProps {
@@ -353,6 +355,7 @@ export function HeritageScene({
     mats.push(skyDawnMat);
     const skyDawnMesh = new THREE.Mesh(skyDawnGeo, skyDawnMat);
     skyDawnMesh.rotation.y = Math.PI * 0.5;
+    skyDawnMesh.renderOrder = -20;
     scene.add(skyDawnMesh);
 
     const skyNightGeo = new THREE.SphereGeometry(122, 32, 20);
@@ -368,6 +371,7 @@ export function HeritageScene({
     mats.push(skyNightMat);
     const skyNightMesh = new THREE.Mesh(skyNightGeo, skyNightMat);
     skyNightMesh.rotation.y = Math.PI * 0.5;
+    skyNightMesh.renderOrder = -19;
     scene.add(skyNightMesh);
 
     // Crisp night starfield dome (razor-sharp stars above the festival skyline)
@@ -407,6 +411,7 @@ export function HeritageScene({
     });
     mats.push(starMat);
     const starField = new THREE.Points(starGeo, starMat);
+    starField.renderOrder = -18;
     scene.add(starField);
 
     // 1. Reflective Shimmering Lake Surface with animated wave ripples
@@ -731,21 +736,53 @@ export function HeritageScene({
     const { group: karstHorizon, mistPlanes } = buildKarstHorizon(textures, geos, mats);
     scene.add(karstHorizon);
 
-    // 13. Soaring Golden Đông Sơn Chim Lạc Flock circling high in the sky (7 cranes)
+    // 12B. Celestial Sky Cultural Tableau: Vầng Hào Quang 54 Dân Tộc + Dải Lụa Thổ Cẩm + Diều Sáo Việt Nam
+    const {
+      group: unityTableau,
+      haloMesh,
+      haloMat,
+      orbRingGroup,
+      ribbons: brocadeRibbons,
+      ribbonMat: brocadeRibbonMat,
+    } = buildCelestialUnityTableau(textures, geos, mats);
+    unityTableau.position.set(-0.6, 12.6, -15.2);
+    scene.add(unityTableau);
+
+    const fluteKites: Array<{
+      group: THREE.Group;
+      tails: THREE.Mesh[];
+      basePos: [number, number, number];
+      phase: number;
+    }> = [];
+    const kiteSpecs: Array<{ pos: [number, number, number]; scale: number; rotY: number; phase: number }> = [
+      { pos: [-15.8, 13.8, -9.8], scale: 1.02, rotY: 0.35, phase: 0.0 },
+      { pos: [-9.8, 15.6, -12.6], scale: 0.82, rotY: 0.18, phase: 2.1 },
+      { pos: [15.4, 14.8, -11.4], scale: 0.92, rotY: -0.42, phase: 4.0 },
+    ];
+    kiteSpecs.forEach((ks) => {
+      const { group: kg, tails } = buildVietnameseFluteKite(textures, geos, mats);
+      kg.position.set(...ks.pos);
+      kg.scale.setScalar(ks.scale);
+      kg.rotation.y = ks.rotY;
+      scene.add(kg);
+      fluteKites.push({ group: kg, tails, basePos: ks.pos, phase: ks.phase });
+    });
+
+    // 13. Soaring Sculpted Vietnamese Chim Hạc / Chim Lạc Flock circling gracefully overhead (7 cranes)
     const soaringBirds: SoaringBird[] = [];
     for (let i = 0; i < 7; i++) {
       const { group: bg, leftWing, rightWing } = buildLacBird(geos, mats);
-      bg.scale.setScalar(0.72 + (i % 3) * 0.14);
+      bg.scale.setScalar(0.92 + (i % 3) * 0.15);
       scene.add(bg);
       soaringBirds.push({
         group: bg,
         leftWing,
         rightWing,
-        radius: 13.5 + (i % 3) * 3.8,
-        height: 11.4 + (i % 4) * 1.35,
-        speed: 0.16 + (i % 3) * 0.025,
+        radius: 13.0 + (i % 3) * 3.5,
+        height: 11.6 + (i % 4) * 1.4,
+        speed: 0.15 + (i % 3) * 0.022,
         angleOffset: (i / 7) * Math.PI * 2,
-        flapSpeed: 3.4 + (i % 3) * 0.45,
+        flapSpeed: 3.1 + (i % 3) * 0.4,
       });
     }
 
@@ -1185,7 +1222,50 @@ export function HeritageScene({
         mistPlanes[i].position.y = 2.2 + (i % 3) * 1.1 + Math.sin(elapsed * 0.3 + i) * 0.22;
       }
 
-      // 6. Soaring Golden Chim Lạc flock orbiting smoothly overhead
+      // 6. Animate Celestial 54-Ethnic Unity Halo, Flowing Ethnic Brocade Ribbons & Diều Sáo Kites
+      haloMesh.rotation.z = elapsed * 0.065;
+      orbRingGroup.rotation.z = -elapsed * 0.09;
+      const targetHaloOpacity = moodRef.current === 'night' ? 0.88 : 0.56;
+      haloMat.opacity = THREE.MathUtils.lerp(haloMat.opacity, targetHaloOpacity * musicPulse, dampT);
+      const targetRibbonOpacity = moodRef.current === 'night' ? 0.84 : 0.72;
+      brocadeRibbonMat.opacity = THREE.MathUtils.lerp(
+        brocadeRibbonMat.opacity,
+        targetRibbonOpacity,
+        dampT,
+      );
+
+      for (let r = 0; r < brocadeRibbons.length; r++) {
+        const rib = brocadeRibbons[r];
+        const rPos = rib.mesh.geometry.attributes.position as THREE.BufferAttribute;
+        const rArr = rPos.array as Float32Array;
+        const rRest = rib.restPositions;
+        for (let i = 0; i < rPos.count; i++) {
+          const idx = i * 3;
+          const rx = rRest[idx];
+          const ry = rRest[idx + 1];
+          const rz = rRest[idx + 2];
+          const dist = Math.abs(rx);
+          const waveY = Math.sin(dist * 0.28 - elapsed * 1.45 + r * 1.2) * 0.45;
+          const waveZ = Math.cos(dist * 0.24 - elapsed * 1.2 + r * 0.8) * 0.55;
+          rArr[idx] = rx;
+          rArr[idx + 1] = ry + waveY;
+          rArr[idx + 2] = rz + waveZ;
+        }
+        rPos.needsUpdate = true;
+      }
+
+      for (let k = 0; k < fluteKites.length; k++) {
+        const fk = fluteKites[k];
+        fk.group.position.x = fk.basePos[0] + Math.sin(elapsed * 0.55 + fk.phase) * 0.85;
+        fk.group.position.y = fk.basePos[1] + Math.sin(elapsed * 0.9 + fk.phase) * 0.42;
+        fk.group.rotation.z = Math.sin(elapsed * 0.75 + fk.phase) * 0.14;
+        for (let t = 0; t < fk.tails.length; t++) {
+          fk.tails[t].rotation.z = Math.sin(elapsed * 2.8 + fk.phase + t * 0.9) * 0.28;
+          fk.tails[t].rotation.x = Math.cos(elapsed * 2.2 + fk.phase + t) * 0.16;
+        }
+      }
+
+      // 6B. Soaring Sculpted Vietnamese Chim Hạc / Chim Lạc flock orbiting smoothly overhead
       for (let i = 0; i < soaringBirds.length; i++) {
         const b = soaringBirds[i];
         const a = b.angleOffset + elapsed * b.speed;

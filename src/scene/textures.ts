@@ -24,6 +24,9 @@ export interface SceneTextureBundle {
   apricotBlossomMap: THREE.CanvasTexture;
   waterRippleMap: THREE.CanvasTexture;
   waterGlowMap: THREE.CanvasTexture;
+  brocadeRibbonMap: THREE.CanvasTexture;
+  unityHaloMap: THREE.CanvasTexture;
+  kiteMap: THREE.CanvasTexture;
   mistCloudMap: THREE.CanvasTexture;
   skyDawnMap: THREE.CanvasTexture;
   skyNightMap: THREE.CanvasTexture;
@@ -71,65 +74,90 @@ function createDongSonTextures(anisotropy: number): {
   const [cCanvas, cCtx] = makeCanvas(size, size);
   const [bCanvas, bCtx] = makeCanvas(size, size);
 
-  // Authentic aged cast bronze with dark antique verdigris-umber recesses & burnished gold ridges
-  const grad = cCtx.createRadialGradient(half, half, 20, half, half, half);
-  grad.addColorStop(0, '#c89844');
-  grad.addColorStop(0.26, '#9c7130');
-  grad.addColorStop(0.58, '#664a24');
-  grad.addColorStop(0.84, '#433827');
-  grad.addColorStop(1, '#2f291e');
+  // Authentic aged Ngọc Lũ Đông Sơn cast bronze patina (dark antique umber-bronze + subtle verdigris)
+  const grad = cCtx.createRadialGradient(half, half, 14, half, half, half);
+  grad.addColorStop(0, '#c89942');
+  grad.addColorStop(0.22, '#92692c');
+  grad.addColorStop(0.55, '#594222');
+  grad.addColorStop(0.84, '#3a3222');
+  grad.addColorStop(1, '#272318');
   cCtx.fillStyle = grad;
   cCtx.fillRect(0, 0, size, size);
 
-  bCtx.fillStyle = '#4a4a4a';
+  bCtx.fillStyle = '#383838';
   bCtx.fillRect(0, 0, size, size);
 
-  // Subtle bronze verdigris & hammered metal grain
-  for (let i = 0; i < 2200; i++) {
+  // Hammered cast-bronze micro-grain & subtle antique verdigris patina
+  for (let i = 0; i < 2600; i++) {
     const px = seededNoise(i, 1.3) * size;
     const py = seededNoise(i, 7.9) * size;
-    const r = 1 + seededNoise(i, 3.1) * 3.5;
+    const r = 1 + seededNoise(i, 3.1) * 3.0;
     cCtx.fillStyle =
-      i % 5 === 0
-        ? 'rgba(72, 108, 92, 0.08)'
+      i % 6 === 0
+        ? 'rgba(68, 106, 86, 0.09)'
         : i % 2 === 0
-          ? 'rgba(248, 214, 134, 0.06)'
-          : 'rgba(24, 16, 8, 0.08)';
+          ? 'rgba(248, 214, 134, 0.055)'
+          : 'rgba(18, 12, 6, 0.09)';
     cCtx.fillRect(px, py, r, r);
   }
 
-  for (let i = 0; i < 64; i++) {
-    const r = 28 + (i / 64) * (half - 34);
-    cCtx.strokeStyle = i % 2 === 0 ? 'rgba(245, 210, 128, 0.08)' : 'rgba(22, 14, 6, 0.1)';
-    cCtx.lineWidth = 2;
-    cCtx.beginPath();
-    cCtx.arc(half, half, r, 0, Math.PI * 2);
-    cCtx.stroke();
-  }
-
-  const ringRadii = [112, 132, 184, 204, 276, 300, 392, 418, 466, 492];
+  // Concentric raised bronze divider rings matching Ngọc Lũ drum zones
+  const ringRadii = [
+    118, 127, 152, 160, 194, 202, 224, 232, 304, 312, 332, 340, 424, 432, 456, 464, 488, 496,
+  ];
   for (const r of ringRadii) {
-    cCtx.strokeStyle = '#e2b55c';
-    cCtx.lineWidth = 5.5;
+    cCtx.strokeStyle = '#e4b85e';
+    cCtx.lineWidth = 3.2;
     cCtx.beginPath();
     cCtx.arc(half, half, r, 0, Math.PI * 2);
     cCtx.stroke();
 
     bCtx.strokeStyle = '#efefef';
-    bCtx.lineWidth = 6.5;
+    bCtx.lineWidth = 4.2;
     bCtx.beginPath();
     bCtx.arc(half, half, r, 0, Math.PI * 2);
     bCtx.stroke();
   }
 
-  // Center 14-point Lạc sun star
+  // Helper to draw both color and bump relief cleanly
+  const drawOnBoth = (fn: (ctx: CanvasRenderingContext2D, isBump: boolean) => void) => {
+    fn(cCtx, false);
+    fn(bCtx, true);
+  };
+
+  // 1. Center 14-ray slender sharp Lạc Sun (Mặt trời 14 tia) + peacock-feather chevrons (họa tiết lông công)
   const rays = 14;
-  const innerR = 46;
-  const outerR = 108;
-  const drawSun = (ctx: CanvasRenderingContext2D, fill: string) => {
+  const innerR = 38;
+  const outerR = 115;
+
+  drawOnBoth((ctx, isBump) => {
     ctx.save();
     ctx.translate(half, half);
-    ctx.fillStyle = fill;
+
+    // Peacock-feather nested V-chevrons between every pair of sun rays
+    ctx.strokeStyle = isBump ? '#dcdcdc' : '#d7a84f';
+    ctx.lineWidth = isBump ? 3.2 : 2.5;
+    for (let i = 0; i < rays; i++) {
+      const aMid = ((i + 0.5) / rays) * Math.PI * 2;
+      const halfSpan = (Math.PI / rays) * 0.72;
+      for (let v = 0; v < 3; v++) {
+        const tipR = 54 + v * 17;
+        const baseR = 96 + v * 7;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(aMid - halfSpan * 0.78) * baseR, Math.sin(aMid - halfSpan * 0.78) * baseR);
+        ctx.lineTo(Math.cos(aMid) * tipR, Math.sin(aMid) * tipR);
+        ctx.lineTo(Math.cos(aMid + halfSpan * 0.78) * baseR, Math.sin(aMid + halfSpan * 0.78) * baseR);
+        ctx.stroke();
+      }
+      // Small circle dot tucked at outer edge of each chevron
+      ctx.fillStyle = isBump ? '#f2f2f2' : '#ebc46e';
+      ctx.beginPath();
+      ctx.arc(Math.cos(aMid) * 107, Math.sin(aMid) * 107, 3.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Slender pointed 14-ray star
+    ctx.fillStyle = isBump ? '#ffffff' : '#f0c970';
     ctx.beginPath();
     for (let i = 0; i < rays * 2; i++) {
       const a = (i * Math.PI) / rays;
@@ -141,101 +169,225 @@ function createDongSonTextures(anisotropy: number): {
     }
     ctx.closePath();
     ctx.fill();
+
+    // Raised central bronze boss (núm mặt trời)
     ctx.beginPath();
-    ctx.arc(0, 0, 36, 0, Math.PI * 2);
+    ctx.arc(0, 0, 30, 0, Math.PI * 2);
+    ctx.fillStyle = isBump ? '#ffffff' : '#f7d886';
     ctx.fill();
+    ctx.strokeStyle = isBump ? '#909090' : '#78521c';
+    ctx.lineWidth = 3;
+    ctx.stroke();
     ctx.restore();
+  });
+
+  // Helper: comb-teeth band (vành răng lược - vạch ngắn đều nhau)
+  const drawCombBand = (rIn: number, rOut: number, count: number) => {
+    drawOnBoth((ctx, isBump) => {
+      ctx.strokeStyle = isBump ? '#dcdcdc' : '#d8aa52';
+      ctx.lineWidth = isBump ? 2.6 : 2.0;
+      for (let i = 0; i < count; i++) {
+        const a = (i / count) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(half + Math.cos(a) * rIn, half + Math.sin(a) * rIn);
+        ctx.lineTo(half + Math.cos(a) * rOut, half + Math.sin(a) * rOut);
+        ctx.stroke();
+      }
+    });
   };
-  drawSun(cCtx, '#edc36a');
-  drawSun(bCtx, '#ffffff');
 
-  const teeth = 48;
-  for (let i = 0; i < teeth; i++) {
-    const a1 = (i / teeth) * Math.PI * 2;
-    const a2 = ((i + 0.5) / teeth) * Math.PI * 2;
-    const a3 = ((i + 1) / teeth) * Math.PI * 2;
-    const drawTooth = (ctx: CanvasRenderingContext2D, color: string) => {
-      ctx.beginPath();
-      ctx.moveTo(half + Math.cos(a1) * 138, half + Math.sin(a1) * 138);
-      ctx.lineTo(half + Math.cos(a2) * 176, half + Math.sin(a2) * 176);
-      ctx.lineTo(half + Math.cos(a3) * 138, half + Math.sin(a3) * 138);
-      ctx.closePath();
-      ctx.fillStyle = color;
-      ctx.fill();
-    };
-    drawTooth(cCtx, '#d7a851');
-    drawTooth(bCtx, '#e0e0e0');
-  }
+  // Helper: iconic Đông Sơn tangent-connected dotted circles band (vành vòng tròn đồng tâm tiếp tuyến)
+  const drawTangentCircleBand = (midR: number, circleR: number, count: number) => {
+    drawOnBoth((ctx, isBump) => {
+      ctx.strokeStyle = isBump ? '#ececec' : '#e5bc62';
+      ctx.fillStyle = isBump ? '#ffffff' : '#f5d484';
+      ctx.lineWidth = isBump ? 2.8 : 2.3;
+      for (let i = 0; i < count; i++) {
+        const a = (i / count) * Math.PI * 2;
+        const aNext = ((i + 1) / count) * Math.PI * 2;
+        const cx = half + Math.cos(a) * midR;
+        const cy = half + Math.sin(a) * midR;
+        const nx = half + Math.cos(aNext) * midR;
+        const ny = half + Math.sin(aNext) * midR;
 
-  const dotCount = 36;
-  for (let i = 0; i < dotCount; i++) {
-    const a = (i / dotCount) * Math.PI * 2;
-    const cx = half + Math.cos(a) * 240;
-    const cy = half + Math.sin(a) * 240;
-    cCtx.strokeStyle = '#e2b55c';
-    cCtx.lineWidth = 3;
-    cCtx.beginPath();
-    cCtx.arc(cx, cy, 13, 0, Math.PI * 2);
-    cCtx.stroke();
-    cCtx.fillStyle = '#f1ce7f';
-    cCtx.beginPath();
-    cCtx.arc(cx, cy, 4, 0, Math.PI * 2);
-    cCtx.fill();
+        // Tangent diagonal connector S-line between adjacent circles
+        const tx1 = cx + Math.cos(a + 0.5) * circleR * 0.9;
+        const ty1 = cy + Math.sin(a + 0.5) * circleR * 0.9;
+        const tx2 = nx - Math.cos(aNext - 0.5) * circleR * 0.9;
+        const ty2 = ny - Math.sin(aNext - 0.5) * circleR * 0.9;
+        ctx.beginPath();
+        ctx.moveTo(tx1, ty1);
+        ctx.lineTo(tx2, ty2);
+        ctx.stroke();
 
-    bCtx.strokeStyle = '#efefef';
-    bCtx.lineWidth = 4;
-    bCtx.beginPath();
-    bCtx.arc(cx, cy, 13, 0, Math.PI * 2);
-    bCtx.stroke();
-  }
+        // Outer circle + inner dot
+        ctx.beginPath();
+        ctx.arc(cx, cy, circleR, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx, cy, circleR * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+  };
 
-  // Stylized Chim Lạc birds
-  const birds = 16;
-  for (let i = 0; i < birds; i++) {
-    const a = (i / birds) * Math.PI * 2;
-    const drawBird = (ctx: CanvasRenderingContext2D, color: string) => {
+  // Band 1: Inner comb-teeth (128..151) & Band 2: Tangent circles (161..193) & Band 3: Comb-teeth (203..223)
+  drawCombBand(130, 149, 108);
+  drawTangentCircleBand(177, 11.5, 36);
+  drawCombBand(205, 221, 132);
+
+  // Band 4 (234..302): Traditional Đông Sơn curved-roof stilt houses (nhà sàn mái cong) & feathered ceremonial frieze
+  const friezeSegments = 12;
+  drawOnBoth((ctx, isBump) => {
+    ctx.strokeStyle = isBump ? '#eeeeee' : '#e6be68';
+    ctx.fillStyle = isBump ? '#f4f4f4' : '#ecc672';
+    ctx.lineWidth = isBump ? 3.2 : 2.6;
+    for (let i = 0; i < friezeSegments; i++) {
+      const a = (i / friezeSegments) * Math.PI * 2;
       ctx.save();
       ctx.translate(half, half);
       ctx.rotate(a);
-      ctx.translate(346, 0);
+      ctx.translate(268, 0);
       ctx.rotate(Math.PI / 2);
-      ctx.fillStyle = color;
+
+      if (i % 2 === 0) {
+        // Curved boat-roof stilt house (nhà sàn mái cong Đông Sơn)
+        ctx.beginPath();
+        ctx.moveTo(-40, -14);
+        ctx.quadraticCurveTo(0, 12, 40, -14);
+        ctx.lineTo(28, -22);
+        ctx.quadraticCurveTo(0, -4, -28, -22);
+        ctx.closePath();
+        ctx.fill();
+        // Stilt posts & floor beam
+        ctx.fillRect(-26, 4, 52, 4);
+        ctx.fillRect(-22, -6, 4, 24);
+        ctx.fillRect(18, -6, 4, 24);
+        ctx.fillRect(-4, -2, 8, 12);
+      } else {
+        // Three rhythmic feathered festival figures (người hóa trang lông chim)
+        for (const ox of [-24, 0, 24]) {
+          ctx.beginPath();
+          ctx.moveTo(ox, -20);
+          ctx.quadraticCurveTo(ox + 10, -14, ox + 14, -4);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(ox, -12, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(ox, -8);
+          ctx.lineTo(ox - 7, 14);
+          ctx.lineTo(ox + 7, 14);
+          ctx.closePath();
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(ox - 4, 14);
+          ctx.lineTo(ox - 6, 24);
+          ctx.moveTo(ox + 4, 14);
+          ctx.lineTo(ox + 6, 24);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+  });
+
+  // Inner divider comb-teeth (313..331)
+  drawCombBand(315, 329, 168);
+
+  // Band 5 (342..422): HERO BAND — 18 Authentic Chim Lạc flying COUNTER-CLOCKWISE (ngược chiều kim đồng hồ)
+  const birdCount = 18;
+  drawOnBoth((ctx, isBump) => {
+    ctx.fillStyle = isBump ? '#ffffff' : '#f0cb75';
+    ctx.strokeStyle = isBump ? '#f2f2f2' : '#e8bf66';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    for (let i = 0; i < birdCount; i++) {
+      const a = (i / birdCount) * Math.PI * 2;
+      ctx.save();
+      ctx.translate(half, half);
+      ctx.rotate(a);
+      ctx.translate(382, 0);
+      // Orient bird profile along counter-clockwise tangent (beak pointing in -Y local = CCW)
+      ctx.rotate(-Math.PI / 2);
+
+      // Streamlined arched body
       ctx.beginPath();
-      ctx.moveTo(0, -34);
-      ctx.lineTo(6, -10);
-      ctx.lineTo(28, 2);
-      ctx.lineTo(9, 10);
-      ctx.lineTo(14, 30);
-      ctx.lineTo(0, 20);
-      ctx.lineTo(-14, 30);
-      ctx.lineTo(-9, 10);
-      ctx.lineTo(-28, 2);
-      ctx.lineTo(-6, -10);
+      ctx.moveTo(14, -2);
+      ctx.quadraticCurveTo(0, -11, -16, -2);
+      ctx.quadraticCurveTo(-2, 7, 14, -2);
       ctx.closePath();
       ctx.fill();
+
+      // Long graceful S-curved neck + head + long pointed horizontal beak (pointing +X = CCW forward)
+      ctx.lineWidth = 4.2;
+      ctx.beginPath();
+      ctx.moveTo(11, -3);
+      ctx.bezierCurveTo(21, -5, 25, -10, 32, -9);
+      ctx.stroke();
+
+      // Head & long sharp beak
+      ctx.beginPath();
+      ctx.arc(33, -9, 4.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(36, -11);
+      ctx.lineTo(54, -9.5);
+      ctx.lineTo(36, -7);
+      ctx.closePath();
+      ctx.fill();
+
+      // Iconic flowing curved Đông Sơn crest plume (mào chim Lạc uốn cong về sau)
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.moveTo(31, -12);
+      ctx.bezierCurveTo(22, -23, 10, -24, 2, -19);
+      ctx.stroke();
+
+      // Upper sweeping curved wing (cánh trên vươn cong)
+      ctx.beginPath();
+      ctx.moveTo(5, -6);
+      ctx.bezierCurveTo(10, -26, -6, -33, -24, -28);
+      ctx.bezierCurveTo(-12, -21, -8, -14, -4, -6);
+      ctx.closePath();
+      ctx.fill();
+
+      // Lower sweeping curved wing (cánh dưới xòe ngược)
+      ctx.beginPath();
+      ctx.moveTo(2, 3);
+      ctx.bezierCurveTo(6, 22, -10, 29, -26, 24);
+      ctx.bezierCurveTo(-14, 18, -10, 11, -6, 3);
+      ctx.closePath();
+      ctx.fill();
+
+      // Long streaming forked tail feathers (đuôi dài xòe)
+      ctx.lineWidth = 3.0;
+      ctx.beginPath();
+      ctx.moveTo(-14, -2);
+      ctx.quadraticCurveTo(-30, -9, -46, -11);
+      ctx.moveTo(-14, 0);
+      ctx.quadraticCurveTo(-32, 0, -50, 1);
+      ctx.moveTo(-14, 2);
+      ctx.quadraticCurveTo(-29, 8, -44, 10);
+      ctx.stroke();
+
+      // Two slender trailing crane legs
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      ctx.moveTo(-4, 4);
+      ctx.lineTo(-22, 13);
+      ctx.moveTo(-8, 4);
+      ctx.lineTo(-28, 11);
+      ctx.stroke();
+
       ctx.restore();
-    };
-    drawBird(cCtx, '#e8c474');
-    drawBird(bCtx, '#f5f5f5');
-  }
+    }
+  });
 
-  const ticks = 120;
-  for (let i = 0; i < ticks; i++) {
-    const a = (i / ticks) * Math.PI * 2;
-    cCtx.strokeStyle = '#d3a550';
-    cCtx.lineWidth = 2.5;
-    cCtx.beginPath();
-    cCtx.moveTo(half + Math.cos(a) * 424, half + Math.sin(a) * 424);
-    cCtx.lineTo(half + Math.cos(a) * 460, half + Math.sin(a) * 460);
-    cCtx.stroke();
-
-    bCtx.strokeStyle = '#dadada';
-    bCtx.lineWidth = 3;
-    bCtx.beginPath();
-    bCtx.moveTo(half + Math.cos(a) * 424, half + Math.sin(a) * 424);
-    bCtx.lineTo(half + Math.cos(a) * 460, half + Math.sin(a) * 460);
-    bCtx.stroke();
-  }
+  // Outer bands: Tangent circles (433..455) + Outer comb-teeth (466..486)
+  drawTangentCircleBand(444, 9.2, 64);
+  drawCombBand(467, 485, 220);
 
   return {
     map: configureTexture(cCanvas, true, anisotropy),
@@ -295,53 +447,120 @@ function createVietnamFlagTexture(anisotropy: number): THREE.CanvasTexture {
 }
 
 /**
- * Traditional Vietnamese Five-Color Festival Flag (Cờ Hội Ngũ Sắc).
+ * Authentic Traditional Vietnamese Five-Color Festival Flag (Cờ Hội Ngũ Sắc / Cờ Thần)
+ * with crimson flaming serrated triangle fringes (diềm lửa răng cưa) on alpha cutout,
+ * five Ngũ Hành concentric silk bands, and gilded traditional floral-cloud medallion center.
  */
 function createFestivalFlagTexture(anisotropy: number): THREE.CanvasTexture {
   const size = 512;
   const [canvas, ctx] = makeCanvas(size, size);
+  ctx.clearRect(0, 0, size, size);
 
-  // Concentric five-element ceremonial silk squares
+  // Main inner square body occupies x: [0..448], y: [54..458] leaving space for flaming fringes on top, right, bottom
+  const left = 4;
+  const top = 54;
+  const bodyW = 442;
+  const bodyH = 404;
+  const right = left + bodyW;
+  const bottom = top + bodyH;
+  const toothDepth = 48;
+
+  // 1. Flaming serrated triangle fringes (diềm lửa răng cưa) around Top, Right, Bottom edges
+  const drawFlameEdge = (
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    nx: number,
+    ny: number,
+    count: number,
+  ) => {
+    for (let i = 0; i < count; i++) {
+      const t0 = i / count;
+      const tMid = (i + 0.5) / count;
+      const t1 = (i + 1) / count;
+      const ax = THREE.MathUtils.lerp(x1, x2, t0);
+      const ay = THREE.MathUtils.lerp(y1, y2, t0);
+      const bx = THREE.MathUtils.lerp(x1, x2, t1);
+      const by = THREE.MathUtils.lerp(y1, y2, t1);
+      const tipX = THREE.MathUtils.lerp(x1, x2, tMid) + nx * toothDepth;
+      const tipY = THREE.MathUtils.lerp(y1, y2, tMid) + ny * toothDepth;
+
+      // Alternate crimson flame & saffron-gold inner tongue accent
+      ctx.fillStyle = i % 2 === 0 ? '#c8201d' : '#b21917';
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(tipX, tipY);
+      ctx.lineTo(bx, by);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = '#f2c95d';
+      ctx.lineWidth = 2.4;
+      ctx.stroke();
+    }
+  };
+
+  drawFlameEdge(left, top, right, top, 0, -1, 10);      // Top flame fringe
+  drawFlameEdge(right, top, right, bottom, 1, 0, 9);    // Right flame fringe
+  drawFlameEdge(right, bottom, left, bottom, 0, 1, 10); // Bottom flame fringe
+
+  // 2. Five authentic Ngũ Hành concentric ceremonial silk squares (Hỏa - Thổ - Mộc - Kim - Thủy)
   const bands = [
-    { inset: 0, color: '#c42420' }, // Hỏa (crimson outer flame border)
-    { inset: 34, color: '#e6b432' }, // Thổ (imperial gold)
-    { inset: 78, color: '#1e6e52' }, // Mộc (emerald jade)
-    { inset: 122, color: '#ede3ce' }, // Kim (ivory silk)
-    { inset: 162, color: '#244b7a' }, // Thủy (deep indigo)
-    { inset: 196, color: '#a81c1a' }, // Center vermilion heart
+    { pad: 0, color: '#c41e1b' },   // Đỏ (Hỏa - outer frame)
+    { pad: 28, color: '#eab72c' },  // Vàng (Thổ)
+    { pad: 62, color: '#1b7a4a' },  // Xanh lục (Mộc)
+    { pad: 96, color: '#f3ebd6' },  // Trắng ngà (Kim)
+    { pad: 128, color: '#1d4f91' }, // Xanh lam (Thủy)
+    { pad: 158, color: '#a81919' }, // Tâm đỏ son trang trọng
   ];
 
   bands.forEach((b) => {
     ctx.fillStyle = b.color;
-    ctx.fillRect(b.inset, b.inset, size - b.inset * 2, size - b.inset * 2);
+    ctx.fillRect(left + b.pad, top + b.pad, bodyW - b.pad * 2, bodyH - b.pad * 2);
+    ctx.strokeStyle = 'rgba(244, 206, 108, 0.72)';
+    ctx.lineWidth = 2.2;
+    ctx.strokeRect(left + b.pad, top + b.pad, bodyW - b.pad * 2, bodyH - b.pad * 2);
   });
 
-  // Delicate golden border lines & center lotus rosette emblem
-  ctx.strokeStyle = '#f2cc6c';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(34, 34, size - 68, size - 68);
-  ctx.strokeRect(196, 196, size - 392, size - 392);
-
+  // 3. Traditional gilded Vietnamese circular cloud-lotus rosette (Hoa văn chữ Thọ / Cúc cổ) in center
+  const cx = left + bodyW / 2;
+  const cy = top + bodyH / 2;
   ctx.save();
-  ctx.translate(size / 2, size / 2);
-  ctx.fillStyle = '#f7d56e';
+  ctx.translate(cx, cy);
+  ctx.strokeStyle = '#f7d56e';
+  ctx.lineWidth = 3.2;
+  ctx.beginPath();
+  ctx.arc(0, 0, 38, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(0, 0, 29, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Traditional 4-scroll cloud fretwork inside medallion
+  ctx.fillStyle = '#fae084';
   for (let i = 0; i < 8; i++) {
-    ctx.rotate(Math.PI / 4);
+    ctx.save();
+    ctx.rotate((i * Math.PI) / 4);
     ctx.beginPath();
-    ctx.ellipse(0, -28, 10, 22, 0, 0, Math.PI * 2);
+    ctx.moveTo(0, -10);
+    ctx.quadraticCurveTo(8, -18, 0, -26);
+    ctx.quadraticCurveTo(-8, -18, 0, -10);
     ctx.fill();
+    ctx.restore();
   }
   ctx.beginPath();
-  ctx.arc(0, 0, 14, 0, Math.PI * 2);
-  ctx.fillStyle = '#fff1b8';
+  ctx.arc(0, 0, 9, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
-  // Woven silk texture overlay
-  ctx.fillStyle = 'rgba(255, 244, 220, 0.045)';
+  // Subtle woven silk shimmer inside body only (source-atop preserves clean alpha fringes)
+  ctx.globalCompositeOperation = 'source-atop';
+  ctx.fillStyle = 'rgba(255, 244, 220, 0.05)';
   for (let y = 0; y < size; y += 3) {
     ctx.fillRect(0, y, size, 1);
   }
+  ctx.globalCompositeOperation = 'source-over';
 
   return configureTexture(canvas, true, anisotropy);
 }
@@ -1013,6 +1232,265 @@ function createWaterGlowTexture(anisotropy: number): THREE.CanvasTexture {
 }
 
 /**
+ * Traditional Vietnamese 54-Ethnic Brocade Silk Ribbon texture (Dải Lụa Thổ Cẩm 54 Dân Tộc)
+ * with geometric diamond motifs, 8-pointed ethnic brocade stars, and softly feathered silk ends.
+ */
+function createBrocadeRibbonTexture(anisotropy: number): THREE.CanvasTexture {
+  const w = 1024;
+  const h = 256;
+  const [canvas, ctx] = makeCanvas(w, h);
+  ctx.clearRect(0, 0, w, h);
+
+  // Horizontal woven silk bands representing traditional highland & lowland brocade textiles
+  const stripes = [
+    { y: 12, h: 16, color: '#eab840' },
+    { y: 28, h: 24, color: '#1b517e' },
+    { y: 52, h: 14, color: '#f3e5c4' },
+    { y: 66, h: 124, color: '#9c1b22' },
+    { y: 190, h: 14, color: '#f3e5c4' },
+    { y: 204, h: 24, color: '#1e6e50' },
+    { y: 228, h: 16, color: '#eab840' },
+  ];
+  stripes.forEach((s) => {
+    ctx.fillStyle = s.color;
+    ctx.fillRect(0, s.y, w, s.h);
+  });
+
+  // Sawtooth ethnic mountain zigzags along top & bottom indigo/jade borders
+  const drawZigZag = (baseY: number, amp: number, color: string) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let x = 0; x <= w; x += 24) {
+      const y = baseY + ((x / 24) % 2 === 0 ? -amp : amp);
+      if (x === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  };
+  drawZigZag(40, 7, '#f7d574');
+  drawZigZag(216, 7, '#f7d574');
+
+  // Repeating authentic Vietnamese Thổ Cẩm nested diamonds & 8-pointed brocade stars along center
+  const step = 128;
+  for (let x = 64; x < w; x += step) {
+    const cy = h / 2;
+
+    // Outer gold diamond
+    ctx.strokeStyle = '#f5ce68';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(x, cy - 50);
+    ctx.lineTo(x + 54, cy);
+    ctx.lineTo(x, cy + 50);
+    ctx.lineTo(x - 54, cy);
+    ctx.closePath();
+    ctx.stroke();
+
+    // Inner teal-indigo diamond fill
+    ctx.fillStyle = (x / step) % 2 === 0 ? '#1b4e7c' : '#1b6d4c';
+    ctx.beginPath();
+    ctx.moveTo(x, cy - 36);
+    ctx.lineTo(x + 38, cy);
+    ctx.lineTo(x, cy + 36);
+    ctx.lineTo(x - 38, cy);
+    ctx.closePath();
+    ctx.fill();
+
+    // 8-pointed ethnic brocade star (hoa văn sao tám cánh Tây Nguyên / Tây Bắc)
+    ctx.save();
+    ctx.translate(x, cy);
+    ctx.fillStyle = '#fae08c';
+    for (let p = 0; p < 8; p++) {
+      ctx.rotate(Math.PI / 4);
+      ctx.beginPath();
+      ctx.moveTo(0, -6);
+      ctx.lineTo(5, -15);
+      ctx.lineTo(0, -25);
+      ctx.lineTo(-5, -15);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.fillStyle = '#fff5d4';
+    ctx.beginPath();
+    ctx.arc(0, 0, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Softly taper & feather both ends into transparent alpha so silk floats poetically in the sky
+  ctx.globalCompositeOperation = 'destination-in';
+  const maskGrad = ctx.createLinearGradient(0, 0, w, 0);
+  maskGrad.addColorStop(0.0, 'rgba(0,0,0,0)');
+  maskGrad.addColorStop(0.14, 'rgba(0,0,0,0.92)');
+  maskGrad.addColorStop(0.5, 'rgba(0,0,0,1)');
+  maskGrad.addColorStop(0.86, 'rgba(0,0,0,0.92)');
+  maskGrad.addColorStop(1.0, 'rgba(0,0,0,0)');
+  ctx.fillStyle = maskGrad;
+  ctx.fillRect(0, 0, w, h);
+  ctx.globalCompositeOperation = 'source-over';
+
+  return configureTexture(canvas, true, anisotropy);
+}
+
+/**
+ * Celestial 54-Ethnic Unity Halo (Vầng Hào Quang Lạc Hồng 54 Dân Tộc)
+ * Ethereal golden Đông Sơn sun filigree encircled by 54 unity stars & ethnic brocade ring.
+ */
+function createUnityHaloTexture(anisotropy: number): THREE.CanvasTexture {
+  const size = 1024;
+  const half = size / 2;
+  const [canvas, ctx] = makeCanvas(size, size);
+  ctx.clearRect(0, 0, size, size);
+
+  // Soft radiant golden celestial glow aura
+  const aura = ctx.createRadialGradient(half, half, 40, half, half, 490);
+  aura.addColorStop(0.0, 'rgba(255, 240, 186, 0.42)');
+  aura.addColorStop(0.32, 'rgba(255, 208, 114, 0.24)');
+  aura.addColorStop(0.68, 'rgba(240, 168, 72, 0.1)');
+  aura.addColorStop(1.0, 'rgba(240, 168, 72, 0)');
+  ctx.fillStyle = aura;
+  ctx.fillRect(0, 0, size, size);
+
+  // Delicate golden filigree concentric circles
+  const rings = [148, 164, 246, 260, 356, 372, 434];
+  rings.forEach((r, idx) => {
+    ctx.strokeStyle = idx % 2 === 0 ? 'rgba(255, 224, 134, 0.85)' : 'rgba(246, 192, 92, 0.55)';
+    ctx.lineWidth = idx === 4 ? 4 : 2.5;
+    ctx.beginPath();
+    ctx.arc(half, half, r, 0, Math.PI * 2);
+    ctx.stroke();
+  });
+
+  // Inner luminous 14-point Lạc Sun filigree
+  ctx.save();
+  ctx.translate(half, half);
+  ctx.fillStyle = 'rgba(255, 232, 152, 0.72)';
+  ctx.beginPath();
+  for (let i = 0; i < 28; i++) {
+    const a = (i * Math.PI) / 14;
+    const r = i % 2 === 0 ? 142 : 52;
+    if (i === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+    else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // Middle ethnic brocade diamond filigree ring (180..240)
+  const diamonds = 36;
+  ctx.strokeStyle = 'rgba(255, 226, 146, 0.72)';
+  ctx.lineWidth = 2.4;
+  for (let i = 0; i < diamonds; i++) {
+    const a = (i / diamonds) * Math.PI * 2;
+    ctx.save();
+    ctx.translate(half + Math.cos(a) * 205, half + Math.sin(a) * 205);
+    ctx.rotate(a);
+    ctx.beginPath();
+    ctx.moveTo(26, 0);
+    ctx.lineTo(0, 14);
+    ctx.lineTo(-26, 0);
+    ctx.lineTo(0, -14);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Outer sacred ring of 54 Luminous Unity Stars & Brocade Petals — representing 54 Dân Tộc Việt Nam!
+  const ethnicPalette = ['#ffe68c', '#ff9e7c', '#98e2b8', '#fff4d8', '#9ec6ff', '#f7b4c8'];
+  for (let i = 0; i < 54; i++) {
+    const a = (i / 54) * Math.PI * 2;
+    const rCenter = 310;
+    const cx = half + Math.cos(a) * rCenter;
+    const cy = half + Math.sin(a) * rCenter;
+
+    // Fine golden ray extending outward from each of the 54 ethnic stars
+    ctx.strokeStyle = 'rgba(255, 228, 148, 0.58)';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(half + Math.cos(a) * 374, half + Math.sin(a) * 374);
+    ctx.lineTo(half + Math.cos(a) * 430, half + Math.sin(a) * 430);
+    ctx.stroke();
+
+    // Small 4-point glowing ethnic unity star in subtle brocade harmony
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(a);
+    ctx.fillStyle = ethnicPalette[i % ethnicPalette.length];
+    ctx.beginPath();
+    for (let p = 0; p < 8; p++) {
+      const pa = (p * Math.PI) / 4;
+      const pr = p % 2 === 0 ? 15 : 5;
+      if (p === 0) ctx.moveTo(Math.cos(pa) * pr, Math.sin(pa) * pr);
+      else ctx.lineTo(Math.cos(pa) * pr, Math.sin(pa) * pr);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  return configureTexture(canvas, true, anisotropy);
+}
+
+/**
+ * Traditional Vietnamese Crescent Flute Kite (Diều Sáo) painted on handmade giấy dó silk.
+ */
+function createKiteTexture(anisotropy: number): THREE.CanvasTexture {
+  const w = 512;
+  const h = 256;
+  const [canvas, ctx] = makeCanvas(w, h);
+  ctx.clearRect(0, 0, w, h);
+
+  // Classic graceful Vietnamese crescent kite silhouette (cánh diều cong vầng trăng)
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(16, 170);
+  ctx.bezierCurveTo(120, 26, 392, 26, 496, 170);
+  ctx.bezierCurveTo(380, 134, 132, 134, 16, 170);
+  ctx.closePath();
+
+  const silkGrad = ctx.createLinearGradient(0, 30, 0, 180);
+  silkGrad.addColorStop(0, '#fff4d4');
+  silkGrad.addColorStop(0.55, '#f6d28a');
+  silkGrad.addColorStop(1, '#d85c42');
+  ctx.fillStyle = silkGrad;
+  ctx.fill();
+
+  ctx.strokeStyle = '#9c221c';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  // Traditional painted lotus-sun folk emblem at kite center
+  ctx.fillStyle = '#c42420';
+  ctx.beginPath();
+  ctx.arc(256, 102, 26, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#fae084';
+  ctx.beginPath();
+  for (let i = 0; i < 16; i++) {
+    const a = (i * Math.PI) / 8;
+    const r = i % 2 === 0 ? 20 : 9;
+    const x = 256 + Math.cos(a) * r;
+    const y = 102 + Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  // Delicate bamboo rib arches
+  ctx.strokeStyle = 'rgba(92, 54, 24, 0.55)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(256, 52);
+  ctx.lineTo(256, 146);
+  ctx.stroke();
+  ctx.restore();
+
+  return configureTexture(canvas, true, anisotropy);
+}
+
+/**
  * Multi-scale organic lake water ripple bump texture.
  */
 function createWaterRippleTexture(anisotropy: number): THREE.CanvasTexture {
@@ -1229,6 +1707,9 @@ export function createSceneTextures(maxAnisotropy: number): SceneTextureBundle {
   const apricotBlossomMap = createBlossomSprigTexture('apricot', anisotropy);
   const waterRippleMap = createWaterRippleTexture(anisotropy);
   const waterGlowMap = createWaterGlowTexture(anisotropy);
+  const brocadeRibbonMap = createBrocadeRibbonTexture(anisotropy);
+  const unityHaloMap = createUnityHaloTexture(anisotropy);
+  const kiteMap = createKiteTexture(anisotropy);
   const mistCloudMap = createMistCloudTexture(anisotropy);
   const skyDawnMap = createSkyDomeTexture('dawn', anisotropy);
   const skyNightMap = createSkyDomeTexture('night', anisotropy);
@@ -1258,6 +1739,9 @@ export function createSceneTextures(maxAnisotropy: number): SceneTextureBundle {
     apricotBlossomMap,
     waterRippleMap,
     waterGlowMap,
+    brocadeRibbonMap,
+    unityHaloMap,
+    kiteMap,
     mistCloudMap,
     skyDawnMap,
     skyNightMap,
@@ -1288,6 +1772,9 @@ export function createSceneTextures(maxAnisotropy: number): SceneTextureBundle {
     apricotBlossomMap,
     waterRippleMap,
     waterGlowMap,
+    brocadeRibbonMap,
+    unityHaloMap,
+    kiteMap,
     mistCloudMap,
     skyDawnMap,
     skyNightMap,
