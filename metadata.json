@@ -1,0 +1,6 @@
+{
+  "name": "Ngày Văn Hóa Việt Nam 24-11",
+  "description": "Không gian 3D tương tác và thiệp điện tử chia sẻ chào mừng Ngày Văn Hóa Việt Nam 24-11 cùng giai điệu Thịnh Vượng Việt Nam Sáng Ngời.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
