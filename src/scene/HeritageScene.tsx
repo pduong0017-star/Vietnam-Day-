@@ -16,6 +16,7 @@ import {
   buildCelestialUnityTableau,
   buildCeremonialLanternPole,
   buildCulturalStele,
+  buildEncirclingBrocadeRibbon,
   buildFestivalFlagPole,
   buildHanoiFlagTower,
   buildKarstHorizon,
@@ -23,6 +24,7 @@ import {
   buildLacBird,
   buildLotusCluster,
   buildLotusSampan,
+  buildLyDynastyDragon,
   buildOnePillarPagoda,
   buildShorelineRockAndReeds,
   buildTheHucBridge,
@@ -736,17 +738,34 @@ export function HeritageScene({
     const { group: karstHorizon, mistPlanes } = buildKarstHorizon(textures, geos, mats);
     scene.add(karstHorizon);
 
-    // 12B. Celestial Sky Cultural Tableau: Vầng Hào Quang 54 Dân Tộc + Dải Lụa Thổ Cẩm + Diều Sáo Việt Nam
+    // 12B. Celestial Sky Cultural Tableau: Vầng Hào Quang 54 Dân Tộc + 360° Dải Lụa Thổ Cẩm + Rồng Thời Lý + Diều Sáo
     const {
       group: unityTableau,
       haloMesh,
       haloMat,
       orbRingGroup,
-      ribbons: brocadeRibbons,
-      ribbonMat: brocadeRibbonMat,
     } = buildCelestialUnityTableau(textures, geos, mats);
     unityTableau.position.set(-0.6, 12.6, -15.2);
     scene.add(unityTableau);
+
+    const {
+      mesh: encirclingRibbon,
+      mat: brocadeRibbonMat,
+      baseTheta: ribbonBaseTheta,
+      baseV: ribbonBaseV,
+    } = buildEncirclingBrocadeRibbon(textures, geos, mats);
+    encirclingRibbon.position.set(0.4, 0, -0.5);
+    scene.add(encirclingRibbon);
+
+    // Iconic Soaring Vietnamese Rồng Thời Lý (Lý Dynasty Dragon) undulating gracefully across the sky
+    const {
+      group: lyDragon,
+      segments: dragonSegments,
+      pearl: dragonPearl,
+      pearlGlowMat: dragonPearlMat,
+    } = buildLyDynastyDragon(geos, mats);
+    scene.add(lyDragon);
+    const _dragonLookTarget = new THREE.Vector3();
 
     const fluteKites: Array<{
       group: THREE.Group;
@@ -755,9 +774,9 @@ export function HeritageScene({
       phase: number;
     }> = [];
     const kiteSpecs: Array<{ pos: [number, number, number]; scale: number; rotY: number; phase: number }> = [
-      { pos: [-15.8, 13.8, -9.8], scale: 1.02, rotY: 0.35, phase: 0.0 },
-      { pos: [-9.8, 15.6, -12.6], scale: 0.82, rotY: 0.18, phase: 2.1 },
-      { pos: [15.4, 14.8, -11.4], scale: 0.92, rotY: -0.42, phase: 4.0 },
+      { pos: [-17.4, 11.2, -10.4], scale: 0.96, rotY: 0.36, phase: 0.0 },
+      { pos: [11.8, 16.0, -14.2], scale: 0.84, rotY: -0.24, phase: 2.1 },
+      { pos: [16.2, 13.0, -10.8], scale: 0.92, rotY: -0.44, phase: 4.0 },
     ];
     kiteSpecs.forEach((ks) => {
       const { group: kg, tails } = buildVietnameseFluteKite(textures, geos, mats);
@@ -767,6 +786,119 @@ export function HeritageScene({
       scene.add(kg);
       fluteKites.push({ group: kg, tails, basePos: ks.pos, phase: ks.phase });
     });
+
+    // 12C. Festive Night Sky Fireworks (Pháo Hoa Lễ Hội Ngày Văn Hóa) — pooled zero-GC Points burst engine
+    const fwBurstCount = 5;
+    const fwParticlesPerBurst = 96;
+    const fwTotalParticles = fwBurstCount * fwParticlesPerBurst;
+    const fwPositions = new Float32Array(fwTotalParticles * 3);
+    const fwColors = new Float32Array(fwTotalParticles * 3);
+    const fwBaseColors = new Float32Array(fwTotalParticles * 3);
+    const fwVelocities = new Float32Array(fwTotalParticles * 3);
+
+    const fwGeo = new THREE.BufferGeometry();
+    fwGeo.setAttribute('position', new THREE.BufferAttribute(fwPositions, 3));
+    fwGeo.setAttribute('color', new THREE.BufferAttribute(fwColors, 3));
+    geos.push(fwGeo);
+
+    const fwMat = new THREE.PointsMaterial({
+      size: 1.08,
+      map: textures.sparkMap,
+      vertexColors: true,
+      transparent: true,
+      opacity: initialTheme.nightBlend,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      fog: false,
+    });
+    mats.push(fwMat);
+    const fwPoints = new THREE.Points(fwGeo, fwMat);
+    fwPoints.renderOrder = 5;
+    fwPoints.frustumCulled = false;
+    scene.add(fwPoints);
+
+    const fwSpotAnchors: Array<[number, number, number]> = [
+      [-15.2, 14.4, -13.5],
+      [14.8, 14.8, -13.2],
+      [-9.6, 15.6, -15.4],
+      [10.2, 15.5, -15.0],
+      [-12.8, 12.6, -11.5],
+    ];
+    const fwPalettes: Array<[number, number, number]> = [
+      [0xffd662, 0xff5a48, 0xfff4c4], // Imperial Gold & Crimson
+      [0xffa6c4, 0xffe49c, 0xffffff], // Lotus Pink & Pearl
+      [0x76e8b8, 0xffd86b, 0xc8fff0], // Jade Emerald & Sun Gold
+      [0xff9e52, 0xffdc70, 0xff6258], // Festival Amber & Vermilion
+      [0x92c8ff, 0xffe48c, 0xffa8c8], // Five-Color Brocade Spark
+    ];
+
+    interface FireworkBurst {
+      age: number;
+      maxAge: number;
+      origin: [number, number, number];
+      paletteIdx: number;
+    }
+
+    const fwBursts: FireworkBurst[] = Array.from({ length: fwBurstCount }, (_, bIdx) => ({
+      age: (bIdx * 0.55) % 2.4,
+      maxAge: 2.3 + (bIdx % 3) * 0.35,
+      origin: fwSpotAnchors[bIdx % fwSpotAnchors.length],
+      paletteIdx: bIdx % fwPalettes.length,
+    }));
+
+    function resetFireworkBurst(bIdx: number, customOrigin?: [number, number, number]) {
+      const burst = fwBursts[bIdx];
+      burst.age = 0;
+      burst.maxAge = 2.15 + Math.random() * 0.65;
+      burst.paletteIdx = (burst.paletteIdx + 1) % fwPalettes.length;
+      const baseAnchor = customOrigin ?? fwSpotAnchors[(bIdx + Math.floor(Math.random() * 3)) % fwSpotAnchors.length];
+      burst.origin = [
+        baseAnchor[0] + (Math.random() - 0.5) * 3.4,
+        baseAnchor[1] + (Math.random() - 0.5) * 2.0,
+        baseAnchor[2] + (Math.random() - 0.5) * 2.2,
+      ];
+
+      const palette = fwPalettes[burst.paletteIdx];
+      const baseIdx = bIdx * fwParticlesPerBurst;
+      for (let p = 0; p < fwParticlesPerBurst; p++) {
+        const idx = (baseIdx + p) * 3;
+        fwPositions[idx] = burst.origin[0];
+        fwPositions[idx + 1] = burst.origin[1];
+        fwPositions[idx + 2] = burst.origin[2];
+
+        // Spherical chrysanthemum distribution + inner gold core ring
+        const phi = Math.acos(1 - (2 * (p + 0.5)) / fwParticlesPerBurst);
+        const theta = Math.PI * (1 + Math.sqrt(5)) * p;
+        const speed = (p % 3 === 0 ? 4.4 : 2.9) + (p % 5) * 0.32;
+        fwVelocities[idx] = Math.sin(phi) * Math.cos(theta) * speed;
+        fwVelocities[idx + 1] = Math.cos(phi) * speed + 0.9;
+        fwVelocities[idx + 2] = Math.sin(phi) * Math.sin(theta) * speed;
+
+        _lerpColor.setHex(palette[p % palette.length]);
+        fwBaseColors[idx] = _lerpColor.r;
+        fwBaseColors[idx + 1] = _lerpColor.g;
+        fwBaseColors[idx + 2] = _lerpColor.b;
+        fwColors[idx] = _lerpColor.r;
+        fwColors[idx + 1] = _lerpColor.g;
+        fwColors[idx + 2] = _lerpColor.b;
+      }
+    }
+
+    // Seed initial bursts staggered mid-bloom so Night mode bursts immediately with color!
+    for (let b = 0; b < fwBurstCount; b++) {
+      resetFireworkBurst(b);
+      const preSim = b * 0.42;
+      fwBursts[b].age = preSim;
+      const baseIdx = b * fwParticlesPerBurst;
+      for (let p = 0; p < fwParticlesPerBurst; p++) {
+        const idx = (baseIdx + p) * 3;
+        fwPositions[idx] += fwVelocities[idx] * preSim * 0.72;
+        fwPositions[idx + 1] += fwVelocities[idx + 1] * preSim * 0.72 - 0.5 * 2.1 * preSim * preSim;
+        fwPositions[idx + 2] += fwVelocities[idx + 2] * preSim * 0.72;
+      }
+    }
+    (fwGeo.attributes.position as THREE.BufferAttribute).needsUpdate = true;
+    (fwGeo.attributes.color as THREE.BufferAttribute).needsUpdate = true;
 
     // 13. Soaring Sculpted Vietnamese Chim Hạc / Chim Lạc Flock circling gracefully overhead (7 cranes)
     const soaringBirds: SoaringBird[] = [];
@@ -1051,10 +1183,17 @@ export function HeritageScene({
       lastTime = now;
       elapsed += dt;
 
-      // 1. Spawn any queued user wish lanterns
+      // 1. Spawn any queued user wish lanterns (+ celebratory firework burst in night mode)
       while (lanternSpawnQueueRef.current > 0) {
         lanternSpawnQueueRef.current -= 1;
         spawnWishLantern();
+        if (moodRef.current === 'night') {
+          resetFireworkBurst(Math.floor(Math.random() * fwBurstCount), [
+            (Math.random() - 0.5) * 18,
+            14.2 + Math.random() * 2.2,
+            -12.8,
+          ]);
+        }
       }
 
       // 2. Smooth Golden-Hour Dawn ↔ Harvest-Moon Festival Night crossfade
@@ -1222,36 +1361,104 @@ export function HeritageScene({
         mistPlanes[i].position.y = 2.2 + (i % 3) * 1.1 + Math.sin(elapsed * 0.3 + i) * 0.22;
       }
 
-      // 6. Animate Celestial 54-Ethnic Unity Halo, Flowing Ethnic Brocade Ribbons & Diều Sáo Kites
+      // 6. Animate Celestial 54-Ethnic Unity Halo, 360° Brocade Sky Ribbon, Rồng Thời Lý Dragon, Kites & Fireworks
       haloMesh.rotation.z = elapsed * 0.065;
       orbRingGroup.rotation.z = -elapsed * 0.09;
-      const targetHaloOpacity = moodRef.current === 'night' ? 0.88 : 0.56;
+      const targetHaloOpacity = moodRef.current === 'night' ? 0.86 : 0.54;
       haloMat.opacity = THREE.MathUtils.lerp(haloMat.opacity, targetHaloOpacity * musicPulse, dampT);
-      const targetRibbonOpacity = moodRef.current === 'night' ? 0.84 : 0.72;
+      const targetRibbonOpacity = moodRef.current === 'night' ? 0.84 : 0.76;
       brocadeRibbonMat.opacity = THREE.MathUtils.lerp(
         brocadeRibbonMat.opacity,
         targetRibbonOpacity,
         dampT,
       );
 
-      for (let r = 0; r < brocadeRibbons.length; r++) {
-        const rib = brocadeRibbons[r];
-        const rPos = rib.mesh.geometry.attributes.position as THREE.BufferAttribute;
-        const rArr = rPos.array as Float32Array;
-        const rRest = rib.restPositions;
-        for (let i = 0; i < rPos.count; i++) {
-          const idx = i * 3;
-          const rx = rRest[idx];
-          const ry = rRest[idx + 1];
-          const rz = rRest[idx + 2];
-          const dist = Math.abs(rx);
-          const waveY = Math.sin(dist * 0.28 - elapsed * 1.45 + r * 1.2) * 0.45;
-          const waveZ = Math.cos(dist * 0.24 - elapsed * 1.2 + r * 0.8) * 0.55;
-          rArr[idx] = rx;
-          rArr[idx + 1] = ry + waveY;
-          rArr[idx + 2] = rz + waveZ;
+      // Smoothly glide & wave the 360° Ethnic Brocade Ribbon around the entire sanctuary
+      textures.brocadeRibbonMap.offset.x = (elapsed * 0.032) % 1;
+      const rPosAttr = encirclingRibbon.geometry.attributes.position as THREE.BufferAttribute;
+      const rArr = rPosAttr.array as Float32Array;
+      for (let i = 0; i < rPosAttr.count; i++) {
+        const theta = ribbonBaseTheta[i];
+        const vOffset = ribbonBaseV[i];
+        const r = 22.0 + Math.sin(theta * 3 + elapsed * 0.4) * 1.8;
+        const frontLift = Math.max(0, Math.sin(theta)) * 3.2;
+        const yWave =
+          13.9 +
+          Math.sin(theta * 4 + 0.6 - elapsed * 0.85) * 1.45 +
+          Math.cos(theta * 6 + elapsed * 1.15) * 0.32 +
+          frontLift;
+        const idx = i * 3;
+        rArr[idx] = Math.cos(theta) * r;
+        rArr[idx + 1] = yWave + vOffset;
+        rArr[idx + 2] = Math.sin(theta) * r;
+      }
+      rPosAttr.needsUpdate = true;
+
+      // Animate soaring articulated Vietnamese Rồng Thời Lý (Lý Dynasty Dragon) with iconic S-curve undulation
+      const dragonAngleOffset = -Math.PI * 0.67; // Starts in scenic upper-left sky on load!
+      const evalDragonPos = (tParam: number, out: THREE.Vector3) => {
+        const a = dragonAngleOffset + tParam;
+        const rX = 16.0 + Math.sin(a * 6.5) * 1.15 + Math.sin(a * 2.0) * 1.4;
+        const rZ = 14.4 + Math.cos(a * 6.5) * 0.95 + Math.cos(a * 2.0) * 1.2;
+        const y =
+          14.2 +
+          Math.sin(a * 9.5 + elapsed * 2.1) * 1.32 +
+          Math.cos(a * 3.0) * 0.72;
+        out.set(Math.cos(a) * rX, y, Math.sin(a) * rZ - 2.4);
+      };
+
+      const dragonHeadT = elapsed * 0.22;
+      // Glowing Dragon Pearl gliding just ahead of the dragon's open jaws
+      evalDragonPos(dragonHeadT + 0.088, dragonPearl.position);
+      dragonPearl.lookAt(camera.position);
+      dragonPearlMat.emissiveIntensity =
+        (moodRef.current === 'night' ? 2.5 : 1.4) * musicPulse;
+
+      for (let s = 0; s < dragonSegments.length; s++) {
+        const segT = dragonHeadT - s * 0.0265;
+        const seg = dragonSegments[s];
+        evalDragonPos(segT, seg.position);
+        evalDragonPos(segT + 0.024, _dragonLookTarget);
+        seg.lookAt(_dragonLookTarget);
+        // Subtle sinuous side-roll as the dragon weaves through clouds
+        seg.rotateZ(Math.sin(elapsed * 2.4 - s * 0.4) * 0.18);
+      }
+
+      // Animate Night Festival Fireworks (Pháo Hoa Lễ Hội)
+      fwMat.opacity = THREE.MathUtils.lerp(fwMat.opacity, targetTheme.nightBlend * 0.96, dampT);
+      if (fwMat.opacity > 0.02) {
+        const fwPosAttr = fwGeo.attributes.position as THREE.BufferAttribute;
+        const fwColAttr = fwGeo.attributes.color as THREE.BufferAttribute;
+        for (let b = 0; b < fwBurstCount; b++) {
+          const burst = fwBursts[b];
+          burst.age += dt;
+          if (burst.age >= burst.maxAge) {
+            resetFireworkBurst(b);
+            continue;
+          }
+          const progress = burst.age / burst.maxAge;
+          const fade = Math.max(0, Math.pow(1 - progress, 1.35));
+          const drag = Math.exp(-1.15 * dt);
+          const baseIdx = b * fwParticlesPerBurst;
+          for (let p = 0; p < fwParticlesPerBurst; p++) {
+            const idx = (baseIdx + p) * 3;
+            fwVelocities[idx] *= drag;
+            fwVelocities[idx + 1] = fwVelocities[idx + 1] * drag - 2.15 * dt;
+            fwVelocities[idx + 2] *= drag;
+
+            fwPositions[idx] += fwVelocities[idx] * dt;
+            fwPositions[idx + 1] += fwVelocities[idx + 1] * dt;
+            fwPositions[idx + 2] += fwVelocities[idx + 2] * dt;
+
+            const twinkle = 0.78 + Math.sin(elapsed * 18 + p * 1.7) * 0.22;
+            const bright = fade * twinkle;
+            fwColors[idx] = fwBaseColors[idx] * bright;
+            fwColors[idx + 1] = fwBaseColors[idx + 1] * bright;
+            fwColors[idx + 2] = fwBaseColors[idx + 2] * bright;
+          }
         }
-        rPos.needsUpdate = true;
+        fwPosAttr.needsUpdate = true;
+        fwColAttr.needsUpdate = true;
       }
 
       for (let k = 0; k < fluteKites.length; k++) {

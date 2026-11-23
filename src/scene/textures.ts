@@ -27,6 +27,7 @@ export interface SceneTextureBundle {
   brocadeRibbonMap: THREE.CanvasTexture;
   unityHaloMap: THREE.CanvasTexture;
   kiteMap: THREE.CanvasTexture;
+  sparkMap: THREE.CanvasTexture;
   mistCloudMap: THREE.CanvasTexture;
   skyDawnMap: THREE.CanvasTexture;
   skyNightMap: THREE.CanvasTexture;
@@ -1318,18 +1319,32 @@ function createBrocadeRibbonTexture(anisotropy: number): THREE.CanvasTexture {
     ctx.restore();
   }
 
-  // Softly taper & feather both ends into transparent alpha so silk floats poetically in the sky
-  ctx.globalCompositeOperation = 'destination-in';
-  const maskGrad = ctx.createLinearGradient(0, 0, w, 0);
-  maskGrad.addColorStop(0.0, 'rgba(0,0,0,0)');
-  maskGrad.addColorStop(0.14, 'rgba(0,0,0,0.92)');
-  maskGrad.addColorStop(0.5, 'rgba(0,0,0,1)');
-  maskGrad.addColorStop(0.86, 'rgba(0,0,0,0.92)');
-  maskGrad.addColorStop(1.0, 'rgba(0,0,0,0)');
-  ctx.fillStyle = maskGrad;
-  ctx.fillRect(0, 0, w, h);
-  ctx.globalCompositeOperation = 'source-over';
+  // Subtle woven silk vertical shimmer so the 360° encircling ribbon catches light seamlessly
+  ctx.fillStyle = 'rgba(255, 245, 224, 0.055)';
+  for (let y = 14; y < h - 14; y += 4) {
+    ctx.fillRect(0, y, w, 1);
+  }
 
+  const tex = configureTexture(canvas, true, anisotropy, [8, 1]);
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  return tex;
+}
+
+/**
+ * Soft luminous radial spark glow texture for night festival fireworks (Pháo Hoa Lễ Hội).
+ */
+function createSparkTexture(anisotropy: number): THREE.CanvasTexture {
+  const size = 64;
+  const half = size / 2;
+  const [canvas, ctx] = makeCanvas(size, size);
+  ctx.clearRect(0, 0, size, size);
+  const grad = ctx.createRadialGradient(half, half, 1, half, half, half);
+  grad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+  grad.addColorStop(0.25, 'rgba(255, 248, 220, 0.92)');
+  grad.addColorStop(0.55, 'rgba(255, 210, 130, 0.42)');
+  grad.addColorStop(1.0, 'rgba(255, 180, 90, 0.0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
   return configureTexture(canvas, true, anisotropy);
 }
 
@@ -1710,6 +1725,7 @@ export function createSceneTextures(maxAnisotropy: number): SceneTextureBundle {
   const brocadeRibbonMap = createBrocadeRibbonTexture(anisotropy);
   const unityHaloMap = createUnityHaloTexture(anisotropy);
   const kiteMap = createKiteTexture(anisotropy);
+  const sparkMap = createSparkTexture(anisotropy);
   const mistCloudMap = createMistCloudTexture(anisotropy);
   const skyDawnMap = createSkyDomeTexture('dawn', anisotropy);
   const skyNightMap = createSkyDomeTexture('night', anisotropy);
@@ -1742,6 +1758,7 @@ export function createSceneTextures(maxAnisotropy: number): SceneTextureBundle {
     brocadeRibbonMap,
     unityHaloMap,
     kiteMap,
+    sparkMap,
     mistCloudMap,
     skyDawnMap,
     skyNightMap,
@@ -1775,6 +1792,7 @@ export function createSceneTextures(maxAnisotropy: number): SceneTextureBundle {
     brocadeRibbonMap,
     unityHaloMap,
     kiteMap,
+    sparkMap,
     mistCloudMap,
     skyDawnMap,
     skyNightMap,

@@ -2393,9 +2393,8 @@ export function buildLacBird(
 }
 
 /**
- * Celestial Sky Cultural Centerpiece (NEW):
- * Vầng Hào Quang 54 Dân Tộc (54-Ethnic Unity Mandala Halo) + Flowing Vietnamese Ethnic Brocade Silk Ribbons
- * symbolizing Đại Đoàn Kết 54 Dân Tộc & Ngày Văn Hóa Việt Nam 24-11 high above the heritage skyline.
+ * Celestial Sky Cultural Centerpiece:
+ * Vầng Hào Quang 54 Dân Tộc (54-Ethnic Unity Mandala Halo) hovering above Khuê Văn Các.
  */
 export function buildCelestialUnityTableau(
   textures: SceneTextureBundle,
@@ -2406,8 +2405,6 @@ export function buildCelestialUnityTableau(
   haloMesh: THREE.Mesh;
   haloMat: THREE.MeshBasicMaterial;
   orbRingGroup: THREE.Group;
-  ribbons: Array<{ mesh: THREE.Mesh; restPositions: Float32Array; side: number }>;
-  ribbonMat: THREE.MeshBasicMaterial;
 } {
   const group = new THREE.Group();
   group.name = 'CelestialUnityTableau';
@@ -2462,12 +2459,76 @@ export function buildCelestialUnityTableau(
   orbRingGroup.add(orbInst);
   group.add(orbRingGroup);
 
-  // 3. Pair of Sweeping Flowing Vietnamese Ethnic Brocade Silk Ribbons (Dải Lụa Thổ Cẩm 54 Dân Tộc)
-  const ribbonMat = trackMat(
+  return { group, haloMesh, haloMat, orbRingGroup };
+}
+
+/**
+ * Grand 360-Degree Encircling Vietnamese Ethnic Brocade Sky Ribbon (Dải Lụa Thổ Cẩm Cuốn Quanh Quần Thể)
+ * Sweeps seamlessly in graceful sinusoidal waves all the way around the entire cultural sanctuary.
+ */
+export function buildEncirclingBrocadeRibbon(
+  textures: SceneTextureBundle,
+  geos: THREE.BufferGeometry[],
+  mats: THREE.Material[],
+): {
+  mesh: THREE.Mesh;
+  mat: THREE.MeshBasicMaterial;
+  baseTheta: Float32Array;
+  baseV: Float32Array;
+} {
+  const segs = 160;
+  const rows = 2; // top edge & bottom edge
+  const vertCount = (segs + 1) * rows;
+  const positions = new Float32Array(vertCount * 3);
+  const uvs = new Float32Array(vertCount * 2);
+  const baseTheta = new Float32Array(vertCount);
+  const baseV = new Float32Array(vertCount);
+  const indices: number[] = [];
+
+  const ribbonHalfH = 0.72;
+  for (let i = 0; i <= segs; i++) {
+    const u = i / segs;
+    const theta = u * Math.PI * 2;
+    const r = 21.8 + Math.sin(theta * 3) * 2.1;
+    // Gently elevate the front sector (near +Z camera side) so it frames cleanly without blocking Khuê Văn Các
+    const frontLift = Math.max(0, Math.sin(theta)) * 3.8;
+    const yCenter = 12.6 + Math.sin(theta * 4 + 0.6) * 1.9 + frontLift;
+    const x = Math.cos(theta) * r;
+    const z = Math.sin(theta) * r;
+
+    for (let j = 0; j < rows; j++) {
+      const idx = i * rows + j;
+      const vSign = j === 0 ? -1 : 1;
+      positions[idx * 3] = x;
+      positions[idx * 3 + 1] = yCenter + vSign * ribbonHalfH;
+      positions[idx * 3 + 2] = z;
+
+      uvs[idx * 2] = u;
+      uvs[idx * 2 + 1] = j;
+      baseTheta[idx] = theta;
+      baseV[idx] = vSign * ribbonHalfH;
+    }
+  }
+
+  for (let i = 0; i < segs; i++) {
+    const a = i * 2;
+    const b = a + 1;
+    const c = a + 2;
+    const d = a + 3;
+    indices.push(a, c, b, b, c, d);
+  }
+
+  const geo = trackGeo(new THREE.BufferGeometry(), geos);
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+
+  const mat = trackMat(
     new THREE.MeshBasicMaterial({
       map: textures.brocadeRibbonMap,
       transparent: true,
-      opacity: 0.78,
+      opacity: 0.82,
       depthWrite: false,
       fog: false,
       side: THREE.DoubleSide,
@@ -2475,32 +2536,260 @@ export function buildCelestialUnityTableau(
     mats,
   );
 
-  const ribbons: Array<{ mesh: THREE.Mesh; restPositions: Float32Array; side: number }> = [];
-  for (const side of [-1, 1]) {
-    const ribbonW = 19.0;
-    const ribbonH = 1.55;
-    const rGeo = trackGeo(new THREE.PlaneGeometry(ribbonW, ribbonH, 36, 4), geos);
-    const pos = rGeo.attributes.position as THREE.BufferAttribute;
-    for (let i = 0; i < pos.count; i++) {
-      const u = pos.getX(i) / ribbonW + 0.5; // 0..1 from inner halo outward
-      const v = pos.getY(i);
-      const x = side * (3.2 + u * ribbonW * 0.92);
-      // Graceful S-wave arch sweeping smoothly across the open sky
-      const archY = Math.sin(u * Math.PI * 1.35) * 1.9 - u * 0.95;
-      const depthZ = -Math.sin(u * Math.PI) * 2.4 - u * 1.2;
-      pos.setXYZ(i, x, archY + v, depthZ);
-    }
-    pos.needsUpdate = true;
-    const restPositions = new Float32Array(pos.array);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.renderOrder = 2;
+  mesh.frustumCulled = false;
+  return { mesh, mat, baseTheta, baseV };
+}
 
-    const rMesh = new THREE.Mesh(rGeo, ribbonMat);
-    rMesh.position.set(0, -0.3, -0.5);
-    rMesh.renderOrder = 2;
-    group.add(rMesh);
-    ribbons.push({ mesh: rMesh, restPositions, side });
+/**
+ * Iconic Soaring Vietnamese Rồng Thời Lý (Lý Dynasty Golden-Crimson Dragon — Thăng Long):
+ * Articulated 28-segment sinuous dragon body with flaming S-crest head, flowing golden whiskers,
+ * crimson dorsal spine fins, 4 graceful dragon limbs, plumed tail, and glowing Dragon Pearl (Châu Ngọc).
+ */
+export function buildLyDynastyDragon(
+  geos: THREE.BufferGeometry[],
+  mats: THREE.Material[],
+): {
+  group: THREE.Group;
+  segments: THREE.Group[];
+  pearl: THREE.Mesh;
+  pearlGlowMat: THREE.MeshStandardMaterial;
+} {
+  const group = new THREE.Group();
+  group.name = 'LyDynastyDragon';
+
+  const goldScaleMat = trackMat(
+    new THREE.MeshStandardMaterial({
+      color: 0xf4c44e,
+      emissive: 0xc27a18,
+      emissiveIntensity: 0.36,
+      roughness: 0.28,
+      metalness: 0.82,
+    }),
+    mats,
+  );
+
+  const bellyGoldMat = trackMat(
+    new THREE.MeshStandardMaterial({
+      color: 0xffe49e,
+      emissive: 0xd99b2e,
+      emissiveIntensity: 0.32,
+      roughness: 0.36,
+      metalness: 0.65,
+    }),
+    mats,
+  );
+
+  const crimsonFinMat = trackMat(
+    new THREE.MeshStandardMaterial({
+      color: 0xc92420,
+      emissive: 0x8e1812,
+      emissiveIntensity: 0.42,
+      roughness: 0.46,
+      metalness: 0.22,
+      side: THREE.DoubleSide,
+    }),
+    mats,
+  );
+
+  const eyeGlowMat = trackMat(
+    new THREE.MeshStandardMaterial({
+      color: 0xfff8cc,
+      emissive: 0xffd24a,
+      emissiveIntensity: 1.8,
+      roughness: 0.2,
+    }),
+    mats,
+  );
+
+  const pearlGlowMat = trackMat(
+    new THREE.MeshStandardMaterial({
+      color: 0xfff4c2,
+      emissive: 0xffb338,
+      emissiveIntensity: 1.8,
+      roughness: 0.18,
+      metalness: 0.2,
+    }),
+    mats,
+  );
+
+  // Radiant Dragon Pearl (Viên Ngọc Rồng Thăng Long) gliding just ahead of the dragon
+  const pearl = new THREE.Mesh(
+    trackGeo(new THREE.SphereGeometry(0.36, 16, 16), geos),
+    pearlGlowMat,
+  );
+  const pearlHaloMat = trackMat(
+    new THREE.MeshBasicMaterial({
+      color: 0xffe48a,
+      transparent: true,
+      opacity: 0.48,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    }),
+    mats,
+  );
+  const pearlHalo = new THREE.Mesh(
+    trackGeo(new THREE.RingGeometry(0.42, 0.66, 20), geos),
+    pearlHaloMat,
+  );
+  pearl.add(pearlHalo);
+  group.add(pearl);
+
+  const segments: THREE.Group[] = [];
+  const segCount = 30;
+
+  // Shared geometries for articulated dragon body
+  const bodySphereGeo = trackGeo(new THREE.SphereGeometry(1, 14, 10), geos);
+  const finShape = new THREE.Shape();
+  finShape.moveTo(0, 0);
+  finShape.quadraticCurveTo(0.1, 0.38, -0.24, 0.48);
+  finShape.quadraticCurveTo(-0.08, 0.18, -0.28, 0);
+  finShape.closePath();
+  const dorsalFinGeo = trackGeo(new THREE.ShapeGeometry(finShape, 5), geos);
+  dorsalFinGeo.rotateY(Math.PI / 2);
+
+  const limbGeo = trackGeo(new THREE.CylinderGeometry(0.06, 0.04, 0.78, 7), geos);
+  const clawGeo = trackGeo(new THREE.ConeGeometry(0.032, 0.2, 5), geos);
+
+  for (let i = 0; i < segCount; i++) {
+    const seg = new THREE.Group();
+    const t = i / (segCount - 1);
+
+    if (i === 0) {
+      // --- Sculpted Đầu Rồng Thời Lý (Lý Dynasty Dragon Head) ---
+      const headRoot = new THREE.Group();
+      headRoot.scale.setScalar(1.22);
+
+      const cranium = new THREE.Mesh(bodySphereGeo, goldScaleMat);
+      cranium.scale.set(0.42, 0.36, 0.58);
+      headRoot.add(cranium);
+
+      // Elongated sculpted upper snout
+      const snout = new THREE.Mesh(
+        trackGeo(new THREE.BoxGeometry(0.44, 0.24, 0.68), geos),
+        goldScaleMat,
+      );
+      snout.position.set(0, 0.06, 0.48);
+      headRoot.add(snout);
+
+      // Slightly open lower jaw reaching toward the Dragon Pearl
+      const jaw = new THREE.Mesh(
+        trackGeo(new THREE.BoxGeometry(0.36, 0.13, 0.56), geos),
+        bellyGoldMat,
+      );
+      jaw.position.set(0, -0.16, 0.44);
+      jaw.rotation.x = 0.26;
+      headRoot.add(jaw);
+
+      // Iconic Lý Dynasty upward-curling S-shaped Flaming Nose Crest (Mào Lửa Thời Lý)
+      const crestCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0, 0.18, 0.74),
+        new THREE.Vector3(0, 0.52, 0.88),
+        new THREE.Vector3(0, 0.84, 0.6),
+        new THREE.Vector3(0, 1.06, 0.74),
+      ]);
+      const noseCrest = new THREE.Mesh(
+        trackGeo(new THREE.TubeGeometry(crestCurve, 12, 0.055, 6, false), geos),
+        crimsonFinMat,
+      );
+      headRoot.add(noseCrest);
+
+      // Sweeping golden whiskers & crimson flowing mane plumes
+      for (const sx of [-1, 1]) {
+        const eye = new THREE.Mesh(
+          trackGeo(new THREE.SphereGeometry(0.095, 10, 10), geos),
+          eyeGlowMat,
+        );
+        eye.position.set(sx * 0.26, 0.15, 0.28);
+        headRoot.add(eye);
+
+        // Long flowing golden whisker (râu rồng uốn lượn)
+        const whiskerCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(sx * 0.22, -0.02, 0.72),
+          new THREE.Vector3(sx * 0.68, -0.14, 0.36),
+          new THREE.Vector3(sx * 0.94, 0.08, -0.24),
+          new THREE.Vector3(sx * 0.82, -0.08, -0.88),
+        ]);
+        const whisker = new THREE.Mesh(
+          trackGeo(new THREE.TubeGeometry(whiskerCurve, 12, 0.026, 6, false), geos),
+          bellyGoldMat,
+        );
+        headRoot.add(whisker);
+
+        // Swept crimson-gold mane plume sweeping backward
+        const maneCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(sx * 0.22, 0.26, 0.08),
+          new THREE.Vector3(sx * 0.46, 0.54, -0.48),
+          new THREE.Vector3(sx * 0.38, 0.64, -1.16),
+        ]);
+        const mane = new THREE.Mesh(
+          trackGeo(new THREE.TubeGeometry(maneCurve, 10, 0.065, 6, false), geos),
+          crimsonFinMat,
+        );
+        headRoot.add(mane);
+      }
+      seg.add(headRoot);
+    } else {
+      // Smoothly tapered, seamlessly overlapping sinuous Lý Dragon body ("mình trơn mềm mại uốn lượn")
+      const r = THREE.MathUtils.lerp(0.38, 0.085, Math.pow(t, 0.8));
+      const bodyMesh = new THREE.Mesh(bodySphereGeo, i % 2 === 0 ? goldScaleMat : bellyGoldMat);
+      bodyMesh.scale.set(r, r * 0.95, r * 2.15);
+      seg.add(bodyMesh);
+
+      // Rhythmic crimson-gold dorsal spine crest along top of body
+      if (i < segCount - 2) {
+        const fin = new THREE.Mesh(dorsalFinGeo, i % 3 === 0 ? goldScaleMat : crimsonFinMat);
+        const finScale = THREE.MathUtils.lerp(1.22, 0.45, t);
+        fin.scale.setScalar(finScale);
+        fin.position.set(0, r * 0.84, 0);
+        seg.add(fin);
+      }
+
+      // 4 Graceful Dragon Limbs with golden claws at segments 7 (forelegs) and 19 (hindlegs)
+      if (i === 7 || i === 19) {
+        for (const sx of [-1, 1]) {
+          const limbHolder = new THREE.Group();
+          limbHolder.position.set(sx * r * 0.78, -r * 0.45, 0);
+          limbHolder.rotation.z = sx * 0.72;
+          limbHolder.rotation.x = 0.48;
+
+          const leg = new THREE.Mesh(limbGeo, goldScaleMat);
+          leg.position.y = -0.34;
+          limbHolder.add(leg);
+
+          for (let c = -1; c <= 1; c++) {
+            const claw = new THREE.Mesh(clawGeo, bellyGoldMat);
+            claw.position.set(c * 0.06, -0.76, 0.06);
+            claw.rotation.x = Math.PI + 0.4;
+            limbHolder.add(claw);
+          }
+          seg.add(limbHolder);
+        }
+      }
+
+      // Flaming feathered tail plume at final segment
+      if (i === segCount - 1) {
+        const tailShape = new THREE.Shape();
+        tailShape.moveTo(0, 0);
+        tailShape.bezierCurveTo(0.36, 0.18, 0.62, 0.46, 0.22, 1.08);
+        tailShape.quadraticCurveTo(0, 0.72, -0.22, 1.08);
+        tailShape.bezierCurveTo(-0.62, 0.46, -0.36, 0.18, 0, 0);
+        const tailPlumeGeo = trackGeo(new THREE.ShapeGeometry(tailShape, 6), geos);
+        tailPlumeGeo.rotateX(-Math.PI / 2);
+        const tailPlume = new THREE.Mesh(tailPlumeGeo, crimsonFinMat);
+        tailPlume.scale.setScalar(1.38);
+        tailPlume.position.set(0, 0.02, -0.05);
+        seg.add(tailPlume);
+      }
+    }
+
+    group.add(seg);
+    segments.push(seg);
   }
 
-  return { group, haloMesh, haloMat, orbRingGroup, ribbons, ribbonMat };
+  return { group, segments, pearl, pearlGlowMat };
 }
 
 /**

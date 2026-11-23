@@ -270,30 +270,30 @@ export default function App() {
         lanternCount={lanternCount}
       />
 
-      {/* Minimal Top-Left Editorial Title Lockup */}
-      <header className="pointer-events-none fixed left-4 top-4 z-20 max-w-[min(410px,calc(100vw-32px))] sm:left-6 sm:top-5">
+      {/* Compact Top-Left Editorial Title Lockup */}
+      <header className="pointer-events-none fixed left-3 top-3 z-20 max-w-[min(320px,calc(100vw-24px))] sm:left-4 sm:top-4">
         <div
-          className={`pointer-events-auto inline-flex flex-col rounded-xl border px-4 py-3 shadow-sm ${
+          className={`pointer-events-auto inline-flex flex-col rounded-lg border px-3 py-1.5 shadow-sm ${
             isNight
-              ? 'border-[#653b46] bg-[#1f131b]/92 text-[#fbf2e8]'
-              : 'border-[#e6ceb4] bg-[#fef9f3]/92 text-[#2e1a18]'
+              ? 'border-[#653b46] bg-[#1f131b]/90 text-[#fbf2e8]'
+              : 'border-[#e6ceb4] bg-[#fef9f3]/90 text-[#2e1a18]'
           }`}
         >
-          <div className="flex items-baseline gap-2.5">
+          <div className="flex items-baseline gap-2">
             <span
-              className={`font-display text-2xl font-extrabold leading-none sm:text-3xl ${
+              className={`font-display text-base font-extrabold leading-none sm:text-lg ${
                 isNight ? 'text-[#f4c968]' : 'text-[#c12d2f]'
               }`}
             >
               24 · 11
             </span>
-            <h1 className="font-display text-base font-bold leading-tight sm:text-lg">
+            <h1 className="font-display text-xs font-bold leading-tight sm:text-sm">
               Ngày Văn Hóa Việt Nam
             </h1>
           </div>
 
           <div
-            className={`mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs ${
+            className={`mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] leading-tight ${
               isNight ? 'text-[#d8c1b6]' : 'text-[#6e5045]'
             }`}
           >
@@ -306,7 +306,7 @@ export default function App() {
                 isNight ? 'text-[#f4c968]' : 'text-[#c12d2f]'
               }`}
             >
-              <MailOpen className="h-3.5 w-3.5" aria-hidden="true" />
+              <MailOpen className="h-3 w-3" aria-hidden="true" />
               <span>Xem lời chúc</span>
             </button>
           </div>
