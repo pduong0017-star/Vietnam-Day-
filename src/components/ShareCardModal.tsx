@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Copy, ExternalLink, Moon, Sun, X } from 'lucide-react';
+import { Check, Copy, ExternalLink, Moon, Sun, Sunset, X } from 'lucide-react';
 import {
   GREETING_PRESETS,
   type GreetingConfig,
@@ -250,12 +250,12 @@ export function ShareCardModal({
             <span className="mb-1.5 block text-xs font-semibold">
               Bối cảnh ánh sáng khi mở link
             </span>
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setSelectedMood('dawn')}
                 aria-pressed={selectedMood === 'dawn'}
-                className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg border text-xs font-semibold transition-colors ${
+                className={`inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap ${
                   selectedMood === 'dawn'
                     ? 'border-[#b91c1c] bg-[#b91c1c] text-white'
                     : isNight
@@ -264,13 +264,28 @@ export function ShareCardModal({
                 }`}
               >
                 <Sun className="h-4 w-4" aria-hidden="true" />
-                <span>Bình Minh Di Sản</span>
+                <span>Bình Minh</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedMood('sunset')}
+                aria-pressed={selectedMood === 'sunset'}
+                className={`inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap ${
+                  selectedMood === 'sunset'
+                    ? 'border-[#b91c1c] bg-[#b91c1c] text-white'
+                    : isNight
+                      ? 'border-[#5a352f] bg-[#2a181c] text-[#e6d3be]'
+                      : 'border-[#d6bc93] bg-[#f5e9d4] text-[#45281f]'
+                }`}
+              >
+                <Sunset className="h-4 w-4" aria-hidden="true" />
+                <span>Hoàng Hôn</span>
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedMood('night')}
                 aria-pressed={selectedMood === 'night'}
-                className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg border text-xs font-semibold transition-colors ${
+                className={`inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap ${
                   selectedMood === 'night'
                     ? 'border-[#b91c1c] bg-[#b91c1c] text-white'
                     : isNight

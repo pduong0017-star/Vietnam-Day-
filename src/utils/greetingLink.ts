@@ -1,4 +1,4 @@
-export type SceneMood = 'dawn' | 'night';
+export type SceneMood = 'dawn' | 'sunset' | 'night';
 
 export type CameraPresetId = 'overview' | 'pavilion' | 'flagtower' | 'lotus';
 
@@ -32,6 +32,17 @@ export interface LyricLine {
   startSec: number;
   endSec: number;
   text: string;
+  isInstrumental?: boolean;
+}
+
+export interface ActiveLyricCue {
+  id: string;
+  text: string;
+  /** 0..1 progress through the current line */
+  progress: number;
+  /** True in the final 0.32s so the active line gently fades out before the next line appears */
+  isExiting: boolean;
+  isInstrumental: boolean;
 }
 
 // Intro speech: Cố Tổng Bí thư Nguyễn Phú Trọng (cut precisely at 23.95s inside the 23.46s–25.12s silence gap)
@@ -78,122 +89,105 @@ export const GREETING_PRESETS: GreetingPreset[] = [
   },
 ];
 
-// Synchronized captions for the opening speech of Tổng Bí thư Nguyễn Phú Trọng (0:00 – 0:23.95)
+// Synchronized verbatim captions for the opening speech of Cố Tổng Bí thư Nguyễn Phú Trọng (0:00 – 0:23.95)
 export const SPEECH_CAPTIONS: LyricLine[] = [
   {
-    startSec: 0,
-    endSec: 4.6,
-    text: '“Văn hóa Bác Hồ nói là soi đường cho quốc dân đi...”',
+    startSec: 0.0,
+    endSec: 5.1,
+    text: '“Văn hóa, Bác Hồ nói là soi đường cho quốc dân đi.”',
   },
   {
-    startSec: 4.6,
-    endSec: 13.8,
-    text: '“...Văn hóa là nói lên bản sắc của một dân tộc.”',
+    startSec: 5.3,
+    endSec: 10.6,
+    text: '“Nhưng mà tôi nhớ trước đây, có một vị tiền bối đã nói là...”',
   },
   {
-    startSec: 13.8,
-    endSec: 19.9,
+    startSec: 10.7,
+    endSec: 14.3,
+    text: '“...văn hóa là nói lên bản sắc của một dân tộc.”',
+  },
+  {
+    startSec: 14.4,
+    endSec: 19.6,
     text: '“Văn hóa còn thì dân tộc còn, văn hóa mất thì dân tộc mất.”',
   },
   {
-    startSec: 19.9,
-    endSec: 24.5,
-    text: '“Vì bản sắc văn hóa không còn thì cái đó không nói lên dân tộc nữa.” — Tổng Bí thư Nguyễn Phú Trọng',
+    startSec: 19.7,
+    endSec: 23.95,
+    text: '“Vì bản sắc văn hóa không còn thì cái đó không nói lên dân tộc nữa.”',
   },
 ];
 
-// Synchronized verses for the full studio track "Thịnh Vượng Việt Nam Sáng Ngời" — Bùi Trường Linh
+// Verbatim, line-by-line synced lyrics verified directly against the 3:55 studio audio
+// "Thịnh Vượng Việt Nam Sáng Ngời" — Bùi Trường Linh
 export const SONG_LYRICS: LyricLine[] = [
+  // Intro (0:00 – 0:15.5)
   {
-    startSec: 0,
-    endSec: 16.5,
+    startSec: 0.4,
+    endSec: 14.8,
     text: 'Thịnh Vượng Việt Nam Sáng Ngời · Bùi Trường Linh',
+    isInstrumental: true,
   },
-  {
-    startSec: 16.5,
-    endSec: 25.0,
-    text: '“Việt Nam sáng trong bao lời ca, à ơi í a ru hời...”',
-  },
-  {
-    startSec: 25.0,
-    endSec: 33.0,
-    text: '“Ngày nắng che xanh mưa chân trời rừng sâu, biển rộng núi cao...”',
-  },
-  {
-    startSec: 33.0,
-    endSec: 41.5,
-    text: '“Thời gian khắc ghi từ ngàn xưa, Việt Nam vẫn luôn huy hoàng...”',
-  },
-  {
-    startSec: 41.5,
-    endSec: 51.0,
-    text: '“Bao chiến công anh hùng muôn đời nhớ ơn mãi luôn rền vang...”',
-  },
-  {
-    startSec: 51.0,
-    endSec: 59.5,
-    text: '“Lời Nam quốc sơn hà định phận, lòng như nhật nguyệt sáng soi...”',
-  },
-  {
-    startSec: 59.5,
-    endSec: 68.0,
-    text: '“Mực in dấu quân dân nhà Trần, lời hịch còn vang sấm truyền...”',
-  },
-  {
-    startSec: 68.0,
-    endSec: 76.0,
-    text: '“Trời xanh như áng thiên thư Bình Ngô, danh nhân họa nước non...”',
-  },
-  {
-    startSec: 76.0,
-    endSec: 89.0,
-    text: '“Ngàn thu vững tuyên ngôn độc lập, thịnh vượng Việt Nam sáng ngời, đời đời ngàn muôn ấm no...”',
-  },
+
+  // Verse 1 (0:15.6 – 0:51.2)
+  { startSec: 15.6, endSec: 20.1, text: 'Việt Nam sáng trong bao lời ca' },
+  { startSec: 20.1, endSec: 24.6, text: 'À ơi ới a ru hời' },
+  { startSec: 24.6, endSec: 29.1, text: 'Này nắng tre xanh mưa chân trời' },
+  { startSec: 29.1, endSec: 33.5, text: 'Rừng sâu, biển rộng, núi cao' },
+  { startSec: 33.5, endSec: 37.9, text: 'Thời gian khắc ghi từ ngàn xưa' },
+  { startSec: 37.9, endSec: 42.3, text: 'Việt Nam vẫn luôn huy hoàng' },
+  { startSec: 42.3, endSec: 46.6, text: 'Bao chiến công anh hùng' },
+  { startSec: 46.6, endSec: 51.0, text: 'Muôn đời nhớ ơn, mãi luôn rền vang' },
+
+  // Chorus 1 (0:51.2 – 1:27.2)
+  { startSec: 51.2, endSec: 55.6, text: 'Lời Nam Quốc Sơn Hà định phận' },
+  { startSec: 55.6, endSec: 60.0, text: 'Sông Như Nguyệt sáng soi' },
+  { startSec: 60.0, endSec: 64.4, text: 'Mực in dấu quân dân nhà Trần' },
+  { startSec: 64.4, endSec: 68.8, text: 'Lời Hịch còn vang sấm truyền' },
+  { startSec: 68.8, endSec: 73.2, text: 'Trời xanh như áng thiên thư Bình Ngô' },
+  { startSec: 73.2, endSec: 77.6, text: 'Danh nhân họa nước non' },
+  { startSec: 77.6, endSec: 81.9, text: 'Ngàn thu vững Tuyên Ngôn Độc Lập' },
+  { startSec: 81.9, endSec: 84.5, text: 'Thịnh vượng Việt Nam sáng ngời' },
+  { startSec: 84.5, endSec: 87.3, text: 'Đời đời ngàn muôn ấm no' },
+
+  // Instrumental Interlude (1:29 – 2:01)
   {
     startSec: 89.0,
-    endSec: 123.0,
+    endSec: 121.4,
     text: 'Hòa tấu đàn tranh · sáo trúc · hào khí Việt Nam',
+    isInstrumental: true,
   },
-  {
-    startSec: 123.0,
-    endSec: 132.0,
-    text: '“Cọc chông cắm nơi Bạch Đằng Giang, nhiều phen phá tan quân thù...”',
-  },
-  {
-    startSec: 132.0,
-    endSec: 140.0,
-    text: '“Ai biết khi xưa Thăng Long thành rồng thiêng từ đây vút bay...”',
-  },
-  {
-    startSec: 140.0,
-    endSec: 148.5,
-    text: '“Bàn tay đã đi vạn dặm xa, bình minh chiếu trên quê nhà...”',
-  },
-  {
-    startSec: 148.5,
-    endSec: 156.5,
-    text: '“Thương cánh chim Lạc Hồng bay dọc đất nước theo bóng cây Trường Sơn...”',
-  },
-  {
-    startSec: 156.5,
-    endSec: 173.0,
-    text: '“Lời Nam quốc sơn hà định phận, lòng như nhật nguyệt sáng soi...”',
-  },
-  {
-    startSec: 173.0,
-    endSec: 189.0,
-    text: '“Ngàn thu vững tuyên ngôn độc lập, thịnh vượng Việt Nam sáng ngời...”',
-  },
-  {
-    startSec: 189.0,
-    endSec: 214.0,
-    text: '“Trời xanh như áng thiên thư Bình Ngô, danh nhân họa nước non...”',
-  },
-  {
-    startSec: 214.0,
-    endSec: 240.0,
-    text: '“Thịnh vượng Việt Nam sáng ngời, đời đời ngàn muôn ấm no...”',
-  },
+
+  // Verse 2 (2:03.3 – 2:37.7)
+  { startSec: 123.3, endSec: 127.6, text: 'Cọc chông cắm nơi Bạch Đằng Giang' },
+  { startSec: 127.6, endSec: 131.9, text: 'Nhiều phen phá tan quân thù' },
+  { startSec: 131.9, endSec: 136.2, text: 'Ai biết khi xưa Thăng Long Thành' },
+  { startSec: 136.2, endSec: 140.5, text: 'Rồng thiêng từ đây vút bay' },
+  { startSec: 140.5, endSec: 144.8, text: 'Bàn tay đã đi vạn dặm xa' },
+  { startSec: 144.8, endSec: 149.1, text: 'Bình minh chiếu trên quê nhà' },
+  { startSec: 149.1, endSec: 153.4, text: 'Thương cánh chim Lạc Hồng' },
+  { startSec: 153.4, endSec: 157.6, text: 'Bay dọc đất nước theo bóng cây Trường Sơn' },
+
+  // Chorus 2 (2:37.8 – 3:09.3)
+  { startSec: 157.8, endSec: 162.1, text: 'Lời Nam Quốc Sơn Hà định phận' },
+  { startSec: 162.1, endSec: 166.4, text: 'Sông Như Nguyệt sáng soi' },
+  { startSec: 166.4, endSec: 170.7, text: 'Mực in dấu quân dân nhà Trần' },
+  { startSec: 170.7, endSec: 175.0, text: 'Lời Hịch còn vang sấm truyền' },
+  { startSec: 175.0, endSec: 179.3, text: 'Trời xanh như áng thiên thư Bình Ngô' },
+  { startSec: 179.3, endSec: 183.5, text: 'Danh nhân họa nước non' },
+  { startSec: 183.5, endSec: 186.5, text: 'Ngàn thu vững Tuyên Ngôn Độc Lập' },
+  { startSec: 186.5, endSec: 189.3, text: 'Thịnh vượng Việt Nam sáng ngời' },
+
+  // Chorus 3 — Grand Key-Lift Climax (3:09.4 – 3:46.2)
+  { startSec: 189.4, endSec: 193.8, text: 'Lời Nam Quốc Sơn Hà định phận' },
+  { startSec: 193.8, endSec: 198.2, text: 'Sông Như Nguyệt sáng soi' },
+  { startSec: 198.2, endSec: 202.6, text: 'Mực in dấu quân dân nhà Trần' },
+  { startSec: 202.6, endSec: 207.0, text: 'Lời Hịch còn vang sấm truyền' },
+  { startSec: 207.0, endSec: 211.4, text: 'Trời xanh như áng thiên thư Bình Ngô' },
+  { startSec: 211.4, endSec: 215.7, text: 'Danh nhân họa nước non' },
+  { startSec: 215.7, endSec: 219.5, text: 'Ngàn thu vững Tuyên Ngôn Độc Lập' },
+  { startSec: 219.5, endSec: 222.4, text: 'Thịnh vượng Việt Nam sáng ngời' },
+  { startSec: 222.4, endSec: 226.4, text: 'Đời đời ngàn muôn ấm no' },
 ];
 
 const MAX_NAME_LEN = 60;
@@ -240,7 +234,8 @@ export function parseGreetingFromSearch(search: string): {
   const rawMood = params.get('mood');
   const autostart = params.get('autostart') === '1';
 
-  const mood: SceneMood = rawMood === 'night' ? 'night' : 'dawn';
+  const mood: SceneMood =
+    rawMood === 'night' ? 'night' : rawMood === 'sunset' ? 'sunset' : 'dawn';
   const to = rawTo ? sanitizeField(rawTo, MAX_NAME_LEN) : '';
   const from = rawFrom ? sanitizeField(rawFrom, MAX_NAME_LEN) : '';
   const message = rawMsg ? sanitizeField(rawMsg, MAX_MESSAGE_LEN) : '';
@@ -283,13 +278,42 @@ export function getSpeechVolumeForTime(seconds: number): number {
   return Math.max(0, Math.min(1, 1 - progress));
 }
 
-export function getCaptionForStage(stage: AudioStage, seconds: number): string {
+/**
+ * Resolves the exact active line-by-line music/speech lyric cue at `seconds`.
+ * Returns `null` during intentional silent breath gaps or the closing outro
+ * so finished lines vanish cleanly before the next line glides in.
+ */
+export function getLyricCueForStage(
+  stage: AudioStage,
+  seconds: number,
+): ActiveLyricCue | null {
   const list = stage === 'speech' ? SPEECH_CAPTIONS : SONG_LYRICS;
   const safeSec = Math.max(0, seconds);
-  const match = list.find(
+  const idx = list.findIndex(
     (line) => safeSec >= line.startSec && safeSec < line.endSec,
   );
-  return match ? match.text : list[list.length - 1].text;
+  if (idx === -1) return null;
+
+  const line = list[idx];
+  const duration = Math.max(0.1, line.endSec - line.startSec);
+  const progress = Math.max(0, Math.min(1, (safeSec - line.startSec) / duration));
+  const remaining = line.endSec - safeSec;
+  const isExiting = remaining <= 0.34;
+
+  return {
+    id: `${stage}-${idx}`,
+    text: line.text,
+    progress,
+    isExiting,
+    isInstrumental: Boolean(line.isInstrumental),
+  };
+}
+
+export function getCaptionForStage(stage: AudioStage, seconds: number): string {
+  const cue = getLyricCueForStage(stage, seconds);
+  if (cue) return cue.text;
+  const list = stage === 'speech' ? SPEECH_CAPTIONS : SONG_LYRICS;
+  return list[list.length - 1].text;
 }
 
 export function formatPlaybackTime(seconds: number): string {

@@ -28,8 +28,10 @@ export interface SceneTextureBundle {
   unityHaloMap: THREE.CanvasTexture;
   kiteMap: THREE.CanvasTexture;
   sparkMap: THREE.CanvasTexture;
+  waterRippleRingMap: THREE.CanvasTexture;
   mistCloudMap: THREE.CanvasTexture;
   skyDawnMap: THREE.CanvasTexture;
+  skySunsetMap: THREE.CanvasTexture;
   skyNightMap: THREE.CanvasTexture;
   contactShadowMap: THREE.CanvasTexture;
   dispose: () => void;
@@ -1564,11 +1566,32 @@ function createMistCloudTexture(anisotropy: number): THREE.CanvasTexture {
   return configureTexture(canvas, true, anisotropy);
 }
 
+function createWaterRippleRingTexture(anisotropy: number): THREE.CanvasTexture {
+  const size = 128;
+  const half = size / 2;
+  const [canvas, ctx] = makeCanvas(size, size);
+  ctx.clearRect(0, 0, size, size);
+
+  const rings = [
+    { r: 54, w: 3.0, a: 0.55 },
+    { r: 38, w: 2.2, a: 0.36 },
+    { r: 22, w: 1.6, a: 0.22 },
+  ];
+  for (const ring of rings) {
+    ctx.strokeStyle = `rgba(255, 245, 224, ${ring.a})`;
+    ctx.lineWidth = ring.w;
+    ctx.beginPath();
+    ctx.arc(half, half, ring.r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  return configureTexture(canvas, true, anisotropy);
+}
+
 /**
- * Cinematic Golden-Hour Dawn & Harvest-Moon Festival Night sky domes.
+ * Cinematic Golden-Hour Dawn, Imperial Sunset (Hoàng Hôn), & Harvest-Moon Festival Night sky domes.
  */
 function createSkyDomeTexture(
-  mode: 'dawn' | 'night',
+  mode: 'dawn' | 'sunset' | 'night',
   anisotropy: number,
 ): THREE.CanvasTexture {
   const w = 1024;
@@ -1630,6 +1653,64 @@ function createSkyDomeTexture(
       ctx.scale(1, ry / rx);
       ctx.beginPath();
       ctx.arc(0, 0, rx, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  } else if (mode === 'sunset') {
+    // Imperial Golden Sunset (Hoàng Hôn Ráng Vàng): deep twilight plum -> crimson rose -> molten amber horizon
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0.0, '#1f1d45');
+    grad.addColorStop(0.2, '#472c5c');
+    grad.addColorStop(0.36, '#8b3e5d');
+    grad.addColorStop(0.47, '#d4624c');
+    grad.addColorStop(0.55, '#f49a4c');
+    grad.addColorStop(0.64, '#f8be68');
+    grad.addColorStop(0.76, '#b85a46');
+    grad.addColorStop(1.0, '#3e212e');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Blazing low sunset sun disc right behind the karst mountains
+    const sunX = w * 0.5;
+    const sunY = h * 0.51;
+    const sunGlow = ctx.createRadialGradient(sunX, sunY, 12, sunX, sunY, 320);
+    sunGlow.addColorStop(0, 'rgba(255, 250, 212, 1.0)');
+    sunGlow.addColorStop(0.14, 'rgba(255, 212, 118, 0.92)');
+    sunGlow.addColorStop(0.38, 'rgba(248, 126, 68, 0.48)');
+    sunGlow.addColorStop(0.72, 'rgba(196, 58, 72, 0.16)');
+    sunGlow.addColorStop(1, 'rgba(196, 58, 72, 0)');
+    ctx.fillStyle = sunGlow;
+    ctx.fillRect(0, 0, w, h);
+
+    // Glowing gilded sunset cloud bands
+    for (let i = 0; i < 26; i++) {
+      const cx = (i * 149 + 30) % w;
+      const cy = h * 0.22 + (i % 7) * 24;
+      const rx = 90 + (i % 4) * 44;
+      const ry = 14 + (i % 3) * 8;
+
+      const belly = ctx.createRadialGradient(cx, cy - 4, 6, cx, cy - 4, rx);
+      belly.addColorStop(0, 'rgba(72, 28, 56, 0.34)');
+      belly.addColorStop(1, 'rgba(72, 28, 56, 0)');
+      ctx.fillStyle = belly;
+      ctx.save();
+      ctx.translate(cx, cy - 4);
+      ctx.scale(1, ry / rx);
+      ctx.beginPath();
+      ctx.arc(0, 0, rx, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      const rim = ctx.createRadialGradient(cx, cy + 4, 4, cx, cy + 4, rx * 0.92);
+      rim.addColorStop(0, 'rgba(255, 206, 120, 0.62)');
+      rim.addColorStop(0.55, 'rgba(246, 118, 78, 0.26)');
+      rim.addColorStop(1, 'rgba(246, 118, 78, 0)');
+      ctx.fillStyle = rim;
+      ctx.save();
+      ctx.translate(cx, cy + 4);
+      ctx.scale(1, (ry * 0.78) / rx);
+      ctx.beginPath();
+      ctx.arc(0, 0, rx * 0.92, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
@@ -1726,8 +1807,10 @@ export function createSceneTextures(maxAnisotropy: number): SceneTextureBundle {
   const unityHaloMap = createUnityHaloTexture(anisotropy);
   const kiteMap = createKiteTexture(anisotropy);
   const sparkMap = createSparkTexture(anisotropy);
+  const waterRippleRingMap = createWaterRippleRingTexture(anisotropy);
   const mistCloudMap = createMistCloudTexture(anisotropy);
   const skyDawnMap = createSkyDomeTexture('dawn', anisotropy);
+  const skySunsetMap = createSkyDomeTexture('sunset', anisotropy);
   const skyNightMap = createSkyDomeTexture('night', anisotropy);
   const contactShadowMap = createContactShadowTexture();
 
@@ -1759,8 +1842,10 @@ export function createSceneTextures(maxAnisotropy: number): SceneTextureBundle {
     unityHaloMap,
     kiteMap,
     sparkMap,
+    waterRippleRingMap,
     mistCloudMap,
     skyDawnMap,
+    skySunsetMap,
     skyNightMap,
     contactShadowMap,
   ];
@@ -1793,8 +1878,10 @@ export function createSceneTextures(maxAnisotropy: number): SceneTextureBundle {
     unityHaloMap,
     kiteMap,
     sparkMap,
+    waterRippleRingMap,
     mistCloudMap,
     skyDawnMap,
+    skySunsetMap,
     skyNightMap,
     contactShadowMap,
     dispose: () => {

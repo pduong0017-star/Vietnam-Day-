@@ -7,6 +7,7 @@ import {
   buildShareableUrl,
   formatPlaybackTime,
   getCaptionForStage,
+  getLyricCueForStage,
   getSpeechVolumeForTime,
   parseGreetingFromSearch,
   validateGreetingInput,
@@ -67,16 +68,32 @@ test('getSpeechVolumeForTime smoothly fades out strictly before narrator starts'
   assert.equal(getSpeechVolumeForTime(25), 0);
 });
 
-test('getCaptionForStage resolves speech intro captions and full song lyrics accurately', () => {
+test('getCaptionForStage and getLyricCueForStage resolve verbatim line-by-line synced lyrics accurately', () => {
   assert.match(getCaptionForStage('speech', 2.0), /soi đường cho quốc dân đi/);
+  assert.match(getCaptionForStage('speech', 7.5), /một vị tiền bối/);
   assert.match(getCaptionForStage('speech', 16.0), /Văn hóa còn thì dân tộc còn/);
-  assert.match(getCaptionForStage('speech', 22.0), /Nguyễn Phú Trọng/);
+  assert.match(getCaptionForStage('speech', 22.0), /không nói lên dân tộc nữa/);
 
   assert.match(getCaptionForStage('song', 5.0), /Bùi Trường Linh/);
-  assert.match(getCaptionForStage('song', 20.0), /Việt Nam sáng trong bao lời ca/);
-  assert.match(getCaptionForStage('song', 55.0), /Nam quốc sơn hà định phận/);
-  assert.match(getCaptionForStage('song', 128.0), /Bạch Đằng Giang/);
-  assert.match(getCaptionForStage('song', 220.0), /ngàn muôn ấm no/);
+  assert.match(getCaptionForStage('song', 18.0), /Việt Nam sáng trong bao lời ca/);
+  assert.match(getCaptionForStage('song', 26.5), /Này nắng tre xanh mưa chân trời/);
+  assert.match(getCaptionForStage('song', 53.0), /Nam Quốc Sơn Hà định phận/);
+  assert.match(getCaptionForStage('song', 57.5), /Sông Như Nguyệt sáng soi/);
+  assert.match(getCaptionForStage('song', 138.0), /Rồng thiêng từ đây vút bay/);
+  assert.match(getCaptionForStage('song', 151.0), /Thương cánh chim Lạc Hồng/);
+  assert.match(getCaptionForStage('song', 224.0), /Đời đời ngàn muôn ấm no/);
+
+  const midCue = getLyricCueForStage('song', 151.0);
+  assert.ok(midCue);
+  assert.equal(midCue.isExiting, false);
+  assert.equal(midCue.isInstrumental, false);
+
+  const exitingCue = getLyricCueForStage('song', 153.25);
+  assert.ok(exitingCue);
+  assert.equal(exitingCue.isExiting, true);
+
+  // Silent outro after final sung line returns null so the 24-11 Grand Finale Tribute stands clean
+  assert.equal(getLyricCueForStage('song', 229.0), null);
 });
 
 test('formatPlaybackTime formats mm:ss accurately across full song length', () => {
@@ -84,3 +101,15 @@ test('formatPlaybackTime formats mm:ss accurately across full song length', () =
   assert.equal(formatPlaybackTime(23.95), '0:23');
   assert.equal(formatPlaybackTime(235), '3:55');
 });
+
+test('parseGreetingFromSearch round-trips sunset mood cleanly', () => {
+  const url = buildShareableUrl('https://example.com/24-11', {
+    to: 'Bạn bè',
+    from: 'Việt Nam',
+    message: 'Hoàng hôn rực rỡ chào mừng Ngày Văn Hóa Việt Nam 24-11!',
+    mood: 'sunset',
+  });
+  const parsed = parseGreetingFromSearch(new URL(url).search);
+  assert.equal(parsed.greeting.mood, 'sunset');
+});
+

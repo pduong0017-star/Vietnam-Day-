@@ -2986,3 +2986,316 @@ export function buildKarstHorizon(
 
   return { group, mistPlanes };
 }
+
+/**
+ * Sculpted Vietnamese Pond Koi Fish (Cá Chép Đỏ - Vàng) swimming serenely around the lotus lake.
+ * Built as a 6-part composite model (tapered body, gold/crimson saddle mark, dorsal fin,
+ * paired pectoral fins, and animated swishing forked tail fin).
+ */
+export function buildKoiFish(
+  variant: 'gold' | 'vermilion' | 'calico',
+  geos: THREE.BufferGeometry[],
+  mats: THREE.Material[],
+): { group: THREE.Group; tailPivot: THREE.Group } {
+  const group = new THREE.Group();
+
+  const bodyColor =
+    variant === 'gold' ? 0xf6b83d : variant === 'vermilion' ? 0xe0482d : 0xfaf2e4;
+  const finColor =
+    variant === 'gold' ? 0xffdf8a : variant === 'vermilion' ? 0xff9466 : 0xe3452c;
+
+  const bodyMat = trackMat(
+    new THREE.MeshStandardMaterial({
+      color: bodyColor,
+      emissive: variant === 'gold' ? 0x6b4208 : 0x54180c,
+      emissiveIntensity: 0.25,
+      roughness: 0.24,
+      metalness: 0.12,
+    }),
+    mats,
+  );
+  const finMat = trackMat(
+    new THREE.MeshStandardMaterial({
+      color: finColor,
+      roughness: 0.45,
+      metalness: 0.05,
+      transparent: true,
+      opacity: 0.86,
+      side: THREE.DoubleSide,
+    }),
+    mats,
+  );
+
+  // Tapered teardrop fish body
+  const bodyGeo = trackGeo(new THREE.SphereGeometry(0.16, 12, 10), geos);
+  bodyGeo.scale(0.85, 0.72, 2.35);
+  const body = new THREE.Mesh(bodyGeo, bodyMat);
+  group.add(body);
+
+  // Calico crimson back patch for visual variety
+  if (variant === 'calico') {
+    const patchMat = trackMat(
+      new THREE.MeshStandardMaterial({
+        color: 0xd93824,
+        roughness: 0.28,
+        metalness: 0.1,
+      }),
+      mats,
+    );
+    const patch = new THREE.Mesh(
+      trackGeo(new THREE.SphereGeometry(0.135, 10, 8), geos),
+      patchMat,
+    );
+    patch.scale.set(0.88, 0.55, 1.35);
+    patch.position.set(0, 0.04, 0.06);
+    group.add(patch);
+  }
+
+  // Dorsal ridge fin
+  const dorsalGeo = trackGeo(new THREE.PlaneGeometry(0.28, 0.12), geos);
+  dorsalGeo.rotateY(Math.PI / 2);
+  const dorsal = new THREE.Mesh(dorsalGeo, finMat);
+  dorsal.position.set(0, 0.12, -0.04);
+  group.add(dorsal);
+
+  // Paired swept pectoral fins
+  const pecGeo = trackGeo(new THREE.PlaneGeometry(0.18, 0.12), geos);
+  pecGeo.rotateX(-Math.PI / 2);
+  for (const sx of [-1, 1]) {
+    const pec = new THREE.Mesh(pecGeo, finMat);
+    pec.position.set(sx * 0.15, -0.02, 0.06);
+    pec.rotation.y = sx * -0.45;
+    pec.rotation.z = sx * 0.22;
+    group.add(pec);
+  }
+
+  // Articulated swishing crescent tail fin
+  const tailPivot = new THREE.Group();
+  tailPivot.position.set(0, 0, -0.34);
+  const tailShape = new THREE.Shape();
+  tailShape.moveTo(0, 0);
+  tailShape.quadraticCurveTo(0.18, 0.14, 0.28, 0.22);
+  tailShape.quadraticCurveTo(0.12, 0.0, 0.28, -0.22);
+  tailShape.quadraticCurveTo(0.18, -0.14, 0, 0);
+  const tailGeo = trackGeo(new THREE.ShapeGeometry(tailShape, 6), geos);
+  tailGeo.rotateY(Math.PI / 2);
+  const tail = new THREE.Mesh(tailGeo, finMat);
+  tailPivot.add(tail);
+  group.add(tailPivot);
+
+  return { group, tailPivot };
+}
+
+/**
+ * Volumetric GLSL Golden Sunbeams / God Rays streaming softly from behind Khuê Văn Các
+ * and the 54-Ethnic Unity Halo during Dawn & Golden Sunset.
+ */
+export function buildVolumetricSunbeams(
+  geos: THREE.BufferGeometry[],
+  mats: THREE.Material[],
+): { group: THREE.Group; shaderMat: THREE.ShaderMaterial } {
+  const group = new THREE.Group();
+
+  const shaderMat = trackMat(
+    new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+        uOpacity: { value: 0.24 },
+        uColor: { value: new THREE.Color(0xffdfa0) },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float uTime;
+        uniform float uOpacity;
+        uniform vec3 uColor;
+        varying vec2 vUv;
+
+        void main() {
+          // Gossamer horizontal beam profile + gentle animated atmospheric shimmer shafts
+          float edgeX = sin(vUv.x * 3.14159265);
+          edgeX = pow(max(0.0, edgeX), 2.15);
+
+          float rays =
+            0.52 +
+            0.26 * sin(vUv.x * 20.0 + uTime * 0.28) +
+            0.22 * sin(vUv.x * 34.0 - uTime * 0.19);
+
+          // Fade cleanly from luminous top origin downward toward the misty lake without washing out center emblem
+          float fadeY = smoothstep(0.02, 0.42, vUv.y) * smoothstep(1.0, 0.76, vUv.y);
+          float alpha = edgeX * rays * fadeY * uOpacity;
+          gl_FragColor = vec4(uColor, alpha);
+        }
+      `,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      fog: false,
+    }),
+    mats,
+  );
+
+  // 3 gently angled wide translucent volumetric shaft planes behind the sanctuary
+  const shaftSpecs: Array<{ pos: [number, number, number]; rotZ: number; rotY: number; w: number; h: number }> = [
+    { pos: [-5.5, 11.8, -14.2], rotZ: 0.24, rotY: 0.08, w: 12.5, h: 22.0 },
+    { pos: [0.4, 12.4, -14.8], rotZ: 0.06, rotY: 0.0, w: 14.0, h: 23.0 },
+    { pos: [6.8, 11.6, -14.0], rotZ: -0.22, rotY: -0.08, w: 12.0, h: 22.0 },
+  ];
+
+  shaftSpecs.forEach((sp) => {
+    const plane = new THREE.Mesh(trackGeo(new THREE.PlaneGeometry(sp.w, sp.h), geos), shaderMat);
+    plane.position.set(...sp.pos);
+    plane.rotation.set(0, sp.rotY, sp.rotZ);
+    plane.renderOrder = 1;
+    group.add(plane);
+  });
+
+  return { group, shaderMat };
+}
+
+/**
+ * Photorealistic Sơn Thủy Volumetric FBM Cloud Banks framing the Tràng An karst skyline.
+ * Renders soft billowing cumulus & valley mist decks with dynamic Dawn / Sunset / Moonlit rim lighting.
+ */
+export function buildVolumetricClouds(
+  geos: THREE.BufferGeometry[],
+  mats: THREE.Material[],
+): {
+  group: THREE.Group;
+  shaderMat: THREE.ShaderMaterial;
+  cloudPlanes: Array<{ mesh: THREE.Mesh; baseX: number; baseY: number; speed: number; phase: number }>;
+} {
+  const group = new THREE.Group();
+
+  const shaderMat = trackMat(
+    new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+        uBaseColor: { value: new THREE.Color(0xc59a8e) },
+        uLitColor: { value: new THREE.Color(0xfff1dc) },
+        uRimColor: { value: new THREE.Color(0xffd28d) },
+        uOpacity: { value: 0.56 },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float uTime;
+        uniform vec3 uBaseColor;
+        uniform vec3 uLitColor;
+        uniform vec3 uRimColor;
+        uniform float uOpacity;
+        varying vec2 vUv;
+
+        float hash21(vec2 p) {
+          p = fract(p * vec2(123.34, 456.21));
+          p += dot(p, p + 45.32);
+          return fract(p.x * p.y);
+        }
+
+        float valueNoise(vec2 p) {
+          vec2 i = floor(p);
+          vec2 f = fract(p);
+          vec2 u = f * f * (3.0 - 2.0 * f);
+          float a = hash21(i);
+          float b = hash21(i + vec2(1.0, 0.0));
+          float c = hash21(i + vec2(0.0, 1.0));
+          float d = hash21(i + vec2(1.0, 1.0));
+          return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+        }
+
+        float fbm(vec2 p) {
+          float v = 0.0;
+          float amp = 0.52;
+          mat2 rot = mat2(0.80, 0.60, -0.60, 0.80);
+          for (int i = 0; i < 4; i++) {
+            v += amp * valueNoise(p);
+            p = rot * p * 2.04 + vec2(1.7, 9.2);
+            amp *= 0.5;
+          }
+          return v;
+        }
+
+        void main() {
+          vec2 centered = (vUv - 0.5) * vec2(2.0, 2.25);
+          float radial = length(centered);
+          float envelope = smoothstep(1.0, 0.22, radial);
+          // Flat calm cloud base, billowing tops
+          float bottomCut = smoothstep(0.08, 0.34, vUv.y);
+          float topFade = smoothstep(1.0, 0.72, vUv.y);
+
+          vec2 driftUv = vec2(vUv.x * 3.8 + uTime * 0.018, vUv.y * 2.4);
+          float n1 = fbm(driftUv);
+          float n2 = fbm(driftUv * 1.9 - vec2(uTime * 0.012, 0.4));
+          float density = smoothstep(0.36, 0.76, n1 * 0.72 + n2 * 0.36) * envelope * bottomCut * topFade;
+
+          if (density < 0.006) discard;
+
+          // Height-based sunlit crown + warm silver-lining rim around cloud wisps
+          float litFactor = clamp(smoothstep(0.22, 0.82, vUv.y) * 0.72 + n2 * 0.45, 0.0, 1.0);
+          float rimEdge = smoothstep(0.12, 0.42, density) * (1.0 - smoothstep(0.45, 0.88, density));
+          vec3 col = mix(uBaseColor, uLitColor, litFactor);
+          col += uRimColor * rimEdge * (0.48 + 0.52 * smoothstep(0.35, 0.9, vUv.y));
+
+          gl_FragColor = vec4(col, density * uOpacity);
+        }
+      `,
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      fog: false,
+    }),
+    mats,
+  );
+
+  const cloudSpecs: Array<{
+    pos: [number, number, number];
+    rotY: number;
+    w: number;
+    h: number;
+    speed: number;
+    phase: number;
+  }> = [
+    // Upper soaring volumetric cumulus banks behind Tràng An karst range
+    { pos: [-40, 21.5, -56], rotY: 0.42, w: 58, h: 19, speed: 0.14, phase: 0.2 },
+    { pos: [2, 24.5, -64], rotY: 0.0, w: 66, h: 21, speed: 0.11, phase: 1.4 },
+    { pos: [42, 21.0, -54], rotY: -0.44, w: 56, h: 18, speed: 0.13, phase: 2.8 },
+    // Flanking sky banks for 360-degree Director orbit continuity
+    { pos: [-60, 18.5, -12], rotY: 1.28, w: 54, h: 17, speed: 0.12, phase: 3.9 },
+    { pos: [60, 19.0, -10], rotY: -1.28, w: 54, h: 17, speed: 0.12, phase: 5.1 },
+    // Lower misty mountain-belt cloud wisps cradling the karst peaks
+    { pos: [-22, 9.8, -42], rotY: 0.22, w: 46, h: 11, speed: 0.18, phase: 0.9 },
+    { pos: [24, 9.4, -40], rotY: -0.24, w: 46, h: 11, speed: 0.16, phase: 2.3 },
+    { pos: [0, 11.2, -48], rotY: 0.02, w: 52, h: 12, speed: 0.15, phase: 4.4 },
+  ];
+
+  const cloudPlanes: Array<{ mesh: THREE.Mesh; baseX: number; baseY: number; speed: number; phase: number }> = [];
+  cloudSpecs.forEach((cs) => {
+    const plane = new THREE.Mesh(trackGeo(new THREE.PlaneGeometry(cs.w, cs.h), geos), shaderMat);
+    plane.position.set(...cs.pos);
+    plane.rotation.y = cs.rotY;
+    plane.renderOrder = -8;
+    group.add(plane);
+    cloudPlanes.push({
+      mesh: plane,
+      baseX: cs.pos[0],
+      baseY: cs.pos[1],
+      speed: cs.speed,
+      phase: cs.phase,
+    });
+  });
+
+  return { group, shaderMat, cloudPlanes };
+}
+
+
